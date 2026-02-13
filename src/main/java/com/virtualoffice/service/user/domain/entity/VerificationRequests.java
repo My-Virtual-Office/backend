@@ -6,6 +6,8 @@ import lombok.*;
 @Entity
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
 public class VerificationRequests {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
