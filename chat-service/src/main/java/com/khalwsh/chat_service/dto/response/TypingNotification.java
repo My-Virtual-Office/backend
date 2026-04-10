@@ -1,0 +1,19 @@
+package com.khalwsh.chat_service.dto.response;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+// broadcast to /topic/channel/{id} or /topic/thread/{id} when someone is typing
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class TypingNotification {
+
+    private Integer userId;
+    private String channelId;
+    private String threadId;
+    private boolean typing;
+}
