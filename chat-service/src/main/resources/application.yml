@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: chat-service
+
+  data:
+    mongodb:
+      uri: mongodb://root:rootpassword@localhost:27017/chat_service?authSource=admin
+      auto-index-creation: true
+
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 5000ms
+
+  docker:
+    compose:
+      lifecycle-management: start-and-stop
+
+server:
+  port: 8084
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+eureka:
+  client:
+    enabled: false
+
+logging:
+  level:
+    com.khalwsh.chat_service: INFO
+    org.springframework.data.mongodb: INFO
+    org.springframework.data.redis: INFO
+    org.springframework.web.socket: DEBUG

@@ -33,3 +33,6 @@ target/
 
 ### Logs ###
 *.log
+
+chat-service/chat-service-arc.md
+chat-service/implementation-steps.txt
