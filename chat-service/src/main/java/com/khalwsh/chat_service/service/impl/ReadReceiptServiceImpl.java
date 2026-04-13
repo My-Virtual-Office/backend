@@ -6,8 +6,10 @@ import com.khalwsh.chat_service.service.ReadReceiptService;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.Date;
 
 @Service
@@ -91,14 +93,22 @@ public class ReadReceiptServiceImpl implements ReadReceiptService {
 
     // only move the cursor forward to avoid stale requests overwriting newer ones
     private void moveForwardOnly(String key, String newMessageId) {
-        String current = redisTemplate.opsForValue().get(key);
-        if (current != null) {
-            ObjectId currentId = new ObjectId(current);
-            ObjectId newId = new ObjectId(newMessageId);
-            if (newId.compareTo(currentId) <= 0) {
-                return; // not ahead, skip
-            }
-        }
-        redisTemplate.opsForValue().set(key, newMessageId);
+        String script =
+                "local current = redis.call('GET', KEYS[1]) " +
+                        "if not current then " +
+                        "  redis.call('SET', KEYS[1], ARGV[1]) " +
+                        "  return 1 " +
+                        "end " +
+                        "if current < ARGV[1] then " +
+                        "  redis.call('SET', KEYS[1], ARGV[1]) " +
+                        "  return 1 " +
+                        "end " +
+                        "return 0";
+
+        redisTemplate.execute(
+                new DefaultRedisScript<>(script, Long.class),
+                Collections.singletonList(key),
+                newMessageId
+        );
     }
 }

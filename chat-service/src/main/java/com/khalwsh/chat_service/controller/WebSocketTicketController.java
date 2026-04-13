@@ -20,6 +20,11 @@ public class WebSocketTicketController {
     @PostMapping("/ws-ticket")
     public ResponseEntity<WebSocketTicketResponse> createTicket(HttpServletRequest httpRequest) {
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+
+        if(!user.validate()){
+            return ResponseEntity.badRequest().build();
+        }
+
         String ticket = webSocketTicketService.createTicket(user.getUserId());
         return ResponseEntity.ok(WebSocketTicketResponse.builder().ticket(ticket).build());
     }
