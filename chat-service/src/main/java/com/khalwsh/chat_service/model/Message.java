@@ -8,7 +8,6 @@ import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
@@ -41,7 +40,6 @@ public class Message {
 
     private ObjectId threadId;
 
-    @Indexed
     private ObjectId replyToId;
 
     private List<Integer> mentions;

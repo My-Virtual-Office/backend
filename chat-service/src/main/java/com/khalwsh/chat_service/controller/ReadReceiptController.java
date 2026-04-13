@@ -2,13 +2,17 @@ package com.khalwsh.chat_service.controller;
 
 import com.khalwsh.chat_service.dto.request.MarkReadRequest;
 import com.khalwsh.chat_service.dto.response.UnreadCountResponse;
+import com.khalwsh.chat_service.service.ChannelService;
 import com.khalwsh.chat_service.service.ReadReceiptService;
+import com.khalwsh.chat_service.service.ThreadService;
 import com.khalwsh.chat_service.util.UserContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/chat")
@@ -16,6 +20,8 @@ import org.springframework.web.bind.annotation.*;
 public class ReadReceiptController {
 
     private final ReadReceiptService readReceiptService;
+    private final ChannelService channelService;
+    private final ThreadService threadService;
 
     @PostMapping("/channels/{id}/read")
     public ResponseEntity<Void> markAsRead(
@@ -25,8 +31,8 @@ public class ReadReceiptController {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
 
-        if(!user.validate()){
-            return ResponseEntity.badRequest().build();
+        if (!channelService.isMember(id, user.getUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not a member of this channel");
         }
 
         readReceiptService.markAsRead(id, user.getUserId(), request.getLastReadMessageId());
@@ -40,8 +46,8 @@ public class ReadReceiptController {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
 
-        if(!user.validate()){
-            return ResponseEntity.badRequest().build();
+        if (!channelService.isMember(id, user.getUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not a member of this channel");
         }
 
         UnreadCountResponse response = readReceiptService.getUnreadCount(id, user.getUserId());
@@ -56,8 +62,10 @@ public class ReadReceiptController {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
 
-        if(!user.validate()){
-            return ResponseEntity.badRequest().build();
+        // check membership via the thread's parent channel
+        String channelId = threadService.getThread(threadId).getChannelId();
+        if (!channelService.isMember(channelId, user.getUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not a member of the parent channel");
         }
 
         readReceiptService.markThreadAsRead(threadId, user.getUserId(), request.getLastReadMessageId());
@@ -71,8 +79,10 @@ public class ReadReceiptController {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
 
-        if(!user.validate()){
-            return ResponseEntity.badRequest().build();
+        // check membership via the thread's parent channel
+        String channelId = threadService.getThread(threadId).getChannelId();
+        if (!channelService.isMember(channelId, user.getUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not a member of the parent channel");
         }
 
         UnreadCountResponse response = readReceiptService.getThreadUnreadCount(threadId, user.getUserId());

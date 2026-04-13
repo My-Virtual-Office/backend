@@ -330,10 +330,12 @@ class ThreadServiceImplTest {
 
         @Test
         void shouldNoOpIfAlreadyDeleted() {
-            existingThread.setDeleted(true);
-            when(threadRepository.findActiveById(threadId)).thenReturn(Optional.of(existingThread));
+            // findActiveById uses { deleted: false }, so a deleted thread isn't found
+            when(threadRepository.findActiveById(threadId)).thenReturn(Optional.empty());
 
-            threadService.deleteThread(threadId.toHexString(), 10, "USER");
+            assertThatThrownBy(() -> threadService.deleteThread(threadId.toHexString(), 10, "USER"))
+                    .isInstanceOf(ResponseStatusException.class)
+                    .hasMessageContaining("thread not found");
 
             verify(threadRepository, never()).save(any());
             verify(threadCleanupService, never()).cleanupThreadMessages(any());

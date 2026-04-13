@@ -16,12 +16,6 @@ public interface ThreadRepository extends MongoRepository<ChatThread, ObjectId> 
     @Query("{ 'channelId': ?0, 'deleted': false }")
     Page<ChatThread> findActiveThreadsByChannelId(ObjectId channelId, Pageable pageable);
 
-    @Query("{ 'channelId': ?0 }")
-    Page<ChatThread> findAllThreadsByChannelId(ObjectId channelId, Pageable pageable);
-
-    @Query("{ 'rootMessageId': ?0 }")
-    Optional<ChatThread> findByRootMessageId(ObjectId rootMessageId);
-
     @Query(value = "{ 'rootMessageId': ?0 }", exists = true)
     boolean existsByRootMessageId(ObjectId rootMessageId);
 

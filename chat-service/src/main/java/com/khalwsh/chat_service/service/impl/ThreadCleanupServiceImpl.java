@@ -27,19 +27,21 @@ public class ThreadCleanupServiceImpl implements ThreadCleanupService {
             Instant now = Instant.now();
 
             boolean needToWrite = false;
+            int deletedCount = 0;
             for (Message message : threadMessages) {
-                if (message.getDeleted() != null && !message.getDeleted()) {
+                if (!message.getDeleted()) {
                     message.setDeleted(true);
                     message.setContent(null);
                     message.setDeletedAt(now);
                     message.setUpdatedAt(now);
                     needToWrite = true;
+                    deletedCount++;
                 }
             }
 
             if (!threadMessages.isEmpty() && needToWrite) {
                 messageRepository.saveAll(threadMessages);
-                log.info("cleaned up {} messages for deleted thread {}", threadMessages.size(), threadId.toHexString());
+                log.info("cleaned up {} messages for deleted thread {}", deletedCount, threadId.toHexString());
             }
         } catch (Exception e) {
             // cleanup failing is fine, the thread itself is already marked deleted

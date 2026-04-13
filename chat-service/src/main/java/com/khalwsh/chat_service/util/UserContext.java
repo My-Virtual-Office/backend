@@ -3,6 +3,8 @@ package com.khalwsh.chat_service.util;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 // reads user identity from nginx-forwarded headers
 // nginx already validated the JWT so we just trust these
@@ -24,17 +26,27 @@ public class UserContext {
             return ADMIN.equalsIgnoreCase(role);
         }
         public boolean isUser() { return USER.equalsIgnoreCase(role);}
-        public boolean validate() {
-            return userId != null && role != null && (isAdmin() || isUser());
-        }
     }
 
-    // grab userId and role from headers
+    // grab userId and role from headers, validate them
     public static UserInfo fromRequest(HttpServletRequest request) {
         String userIdHeader = request.getHeader(HEADER_USER_ID);
         String role = request.getHeader(HEADER_USER_ROLE);
 
-        Integer userId = (userIdHeader != null) ? Integer.parseInt(userIdHeader) : null;
+        if (userIdHeader == null || userIdHeader.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "missing X-User-Id header");
+        }
+
+        Integer userId;
+        try {
+            userId = Integer.parseInt(userIdHeader);
+        } catch (NumberFormatException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "X-User-Id must be a valid integer");
+        }
+
+        if (role == null || (!ADMIN.equalsIgnoreCase(role) && !USER.equalsIgnoreCase(role))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "X-User-Role must be USER or ADMIN");
+        }
 
         return new UserInfo(userId, role);
     }

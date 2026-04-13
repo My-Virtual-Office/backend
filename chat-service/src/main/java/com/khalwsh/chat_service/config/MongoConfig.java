@@ -9,7 +9,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
-// mongo setup + custom indexes
+// indexes that need partialFilterExpression can't be done with @CompoundIndex
+// because Spring writes null explicitly and mongo sparse only skips *missing* fields
 @Configuration
 @EnableMongoAuditing
 @RequiredArgsConstructor
@@ -17,14 +18,17 @@ public class MongoConfig {
 
     private final MongoTemplate mongoTemplate;
 
-    // unique index on (senderId, clientMessageId) with partialFilter,
-    // so rows without clientMessageId are just ignored.
-    // can't use @CompoundIndex(sparse) because Spring writes null explicitly
-    // and mongo sparse only skips *missing* fields, not null ones.
     @PostConstruct
-    void ensureIdempotencyIndex() {
-        var collection = mongoTemplate.getCollection("messages");
-        collection.createIndex(
+    void ensureIndexes() {
+        ensureIdempotencyIndex();
+        ensureChannelNameUniqueness();
+    }
+
+    // idempotency: (senderId, clientMessageId) must be unique,
+    // but only when clientMessageId is actually set
+    private void ensureIdempotencyIndex() {
+        var messages = mongoTemplate.getCollection("messages");
+        messages.createIndex(
                 Indexes.compoundIndex(
                         Indexes.ascending("senderId"),
                         Indexes.ascending("clientMessageId")
@@ -33,7 +37,31 @@ public class MongoConfig {
                         .name("idx_sender_clientMsgId")
                         .unique(true)
                         .partialFilterExpression(
-                                Filters.exists("clientMessageId")
+                                Filters.and(
+                                        Filters.exists("clientMessageId"),
+                                        Filters.ne("clientMessageId", null)
+                                )
+                        )
+        );
+    }
+
+    // channel names should be unique within a workspace.
+    // DMs have workspaceId=null so they're excluded from this constraint.
+    private void ensureChannelNameUniqueness() {
+        var channels = mongoTemplate.getCollection("channels");
+        channels.createIndex(
+                Indexes.compoundIndex(
+                        Indexes.ascending("workspaceId"),
+                        Indexes.ascending("name")
+                ),
+                new IndexOptions()
+                        .name("idx_workspace_name")
+                        .unique(true)
+                        .partialFilterExpression(
+                                Filters.and(
+                                        Filters.exists("workspaceId"),
+                                        Filters.ne("workspaceId", null)
+                                )
                         )
         );
     }

@@ -21,12 +21,7 @@ import java.util.List;
 @AllArgsConstructor
 @Document(collection = "channels")
 @CompoundIndexes({
-    @CompoundIndex(name = "idx_dmKey", def = "{'dmKey': 1}", unique = true, sparse = true),
-    @CompoundIndex(
-            name = "idx_workspace_channel_unique",
-            def = "{'workspaceId': 1, 'name': 1}",
-            unique = true
-    )
+    @CompoundIndex(name = "idx_dmKey", def = "{'dmKey': 1}", unique = true, sparse = true)
 })
 public class Channel {
 

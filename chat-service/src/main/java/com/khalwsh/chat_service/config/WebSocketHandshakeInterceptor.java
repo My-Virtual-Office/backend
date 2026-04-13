@@ -26,14 +26,15 @@ public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
 
         if (request instanceof ServletServerHttpRequest servletRequest) {
             String ticket = servletRequest.getServletRequest().getParameter("ticket");
-            Integer userId = webSocketTicketService.validateAndConsumeTicket(ticket);
+            Map<String, Object> ticketData = webSocketTicketService.validateAndConsumeTicket(ticket);
 
-            if (userId == null) {
+            if (ticketData == null) {
                 return false; // bad or expired ticket
             }
 
-            // put userId in session for later
-            attributes.put("userId", userId);
+            // put userId and userRole in session for STOMP handlers
+            attributes.put("userId", ticketData.get("userId"));
+            attributes.put("userRole", ticketData.get("userRole"));
             return true;
         }
 

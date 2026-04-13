@@ -113,7 +113,7 @@ public class ChatStompController {
     private String getUserRole(SimpMessageHeaderAccessor headerAccessor) {
         Map<String, Object> sessionAttrs = headerAccessor.getSessionAttributes();
         if (sessionAttrs == null || !sessionAttrs.containsKey("userRole")) {
-            throw new IllegalStateException("no userId in WebSocket session — handshake interceptor may have failed");
+            throw new IllegalStateException("no userRole in WebSocket session — handshake interceptor may have failed");
         }
         return (String) sessionAttrs.get("userRole");
     }
@@ -131,9 +131,10 @@ public class ChatStompController {
                 )
         );
 
-        // send to a session-specific destination
-        messagingTemplate.convertAndSend(
-                "/queue/errors-" + sessionId,
+        // send to /user/{sessionId}/queue/errors — same path as @SendToUser("/queue/errors")
+        messagingTemplate.convertAndSendToUser(
+                sessionId,
+                "/queue/errors",
                 error
         );
     }
