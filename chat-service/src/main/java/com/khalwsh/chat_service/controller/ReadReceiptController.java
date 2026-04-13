@@ -24,6 +24,11 @@ public class ReadReceiptController {
             HttpServletRequest httpRequest) {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+
+        if(!user.validate()){
+            return ResponseEntity.badRequest().build();
+        }
+
         readReceiptService.markAsRead(id, user.getUserId(), request.getLastReadMessageId());
         return ResponseEntity.ok().build();
     }
@@ -34,6 +39,11 @@ public class ReadReceiptController {
             HttpServletRequest httpRequest) {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+
+        if(!user.validate()){
+            return ResponseEntity.badRequest().build();
+        }
+
         UnreadCountResponse response = readReceiptService.getUnreadCount(id, user.getUserId());
         return ResponseEntity.ok(response);
     }
@@ -45,6 +55,11 @@ public class ReadReceiptController {
             HttpServletRequest httpRequest) {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+
+        if(!user.validate()){
+            return ResponseEntity.badRequest().build();
+        }
+
         readReceiptService.markThreadAsRead(threadId, user.getUserId(), request.getLastReadMessageId());
         return ResponseEntity.ok().build();
     }
@@ -55,6 +70,11 @@ public class ReadReceiptController {
             HttpServletRequest httpRequest) {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+
+        if(!user.validate()){
+            return ResponseEntity.badRequest().build();
+        }
+
         UnreadCountResponse response = readReceiptService.getThreadUnreadCount(threadId, user.getUserId());
         return ResponseEntity.ok(response);
     }

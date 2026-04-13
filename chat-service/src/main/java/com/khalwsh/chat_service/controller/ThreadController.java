@@ -31,6 +31,11 @@ public class ThreadController {
             HttpServletRequest httpRequest) {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+
+        if(!user.validate()){
+            return ResponseEntity.badRequest().build();
+        }
+
         ThreadResponse response = threadService.createThread(id, request, user.getUserId(), user.getRole());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -57,6 +62,11 @@ public class ThreadController {
             HttpServletRequest httpRequest) {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+
+        if(!user.validate()){
+            return ResponseEntity.badRequest().build();
+        }
+
         threadService.deleteThread(threadId, user.getUserId(), user.getRole());
         return ResponseEntity.ok().build();
     }

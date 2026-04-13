@@ -11,6 +11,9 @@ public class UserContext {
     private static final String HEADER_USER_ID = "X-User-Id";
     private static final String HEADER_USER_ROLE = "X-User-Role";
 
+    private static final String USER = "USER";
+    private static final String ADMIN = "ADMIN";
+
     @Getter
     @AllArgsConstructor
     public static class UserInfo {
@@ -18,17 +21,20 @@ public class UserContext {
         private final String role;
 
         public boolean isAdmin() {
-            return "ADMIN".equalsIgnoreCase(role);
+            return ADMIN.equalsIgnoreCase(role);
+        }
+        public boolean isUser() { return USER.equalsIgnoreCase(role);}
+        public boolean validate() {
+            return userId != null && role != null && (isAdmin() || isUser());
         }
     }
 
     // grab userId and role from headers
     public static UserInfo fromRequest(HttpServletRequest request) {
         String userIdHeader = request.getHeader(HEADER_USER_ID);
-        String roleHeader = request.getHeader(HEADER_USER_ROLE);
+        String role = request.getHeader(HEADER_USER_ROLE);
 
         Integer userId = (userIdHeader != null) ? Integer.parseInt(userIdHeader) : null;
-        String role = (roleHeader != null) ? roleHeader : "USER";
 
         return new UserInfo(userId, role);
     }

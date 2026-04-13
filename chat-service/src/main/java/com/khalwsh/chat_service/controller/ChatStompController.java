@@ -30,6 +30,7 @@ public class ChatStompController {
     @MessageMapping("/chat/send")
     public void handleSendMessage(StompSendMessage payload, SimpMessageHeaderAccessor headerAccessor) {
         Integer userId = getUserId(headerAccessor);
+        String role = getUserRole(headerAccessor);
 
         if (payload.getChannelId() == null || payload.getContent() == null || payload.getContent().isBlank()) {
             sendErrorToUser(headerAccessor, "INVALID_PAYLOAD", "channelId and content are required");
@@ -45,7 +46,7 @@ public class ChatStompController {
                     .clientMessageId(payload.getClientMessageId())
                     .build();
 
-            MessageResponse saved = messageService.sendMessage(payload.getChannelId(), request, userId, "USER");
+            MessageResponse saved = messageService.sendMessage(payload.getChannelId(), request, userId, role);
 
             // wrap in the event envelope
             WebSocketEvent<MessageResponse> event = WebSocketEvent.of(WebSocketEvent.NEW_MESSAGE, saved);
@@ -65,6 +66,8 @@ public class ChatStompController {
             sendErrorToUser(headerAccessor, "INTERNAL_ERROR", "failed to send message");
         }
     }
+
+
 
     @MessageMapping("/chat/typing")
     public void handleTyping(StompTypingEvent payload, SimpMessageHeaderAccessor headerAccessor) {
@@ -107,14 +110,32 @@ public class ChatStompController {
         }
         return (Integer) sessionAttrs.get("userId");
     }
+    private String getUserRole(SimpMessageHeaderAccessor headerAccessor) {
+        Map<String, Object> sessionAttrs = headerAccessor.getSessionAttributes();
+        if (sessionAttrs == null || !sessionAttrs.containsKey("userRole")) {
+            throw new IllegalStateException("no userId in WebSocket session — handshake interceptor may have failed");
+        }
+        return (String) sessionAttrs.get("userRole");
+    }
+    private void sendErrorToUser(SimpMessageHeaderAccessor headerAccessor,
+                                 String code,
+                                 String message) {
 
-    private void sendErrorToUser(SimpMessageHeaderAccessor headerAccessor, String code, String message) {
         String sessionId = headerAccessor.getSessionId();
-        WebSocketEvent<Map<String, String>> error = WebSocketEvent.of("ERROR", Map.of(
-                "code", code,
-                "message", message != null ? message : "unknown error"
-        ));
-        messagingTemplate.convertAndSendToUser(sessionId, "/queue/errors", error);
+
+        WebSocketEvent<Map<String, String>> error = WebSocketEvent.of(
+                "ERROR",
+                Map.of(
+                        "code", code,
+                        "message", message != null ? message : "unknown error"
+                )
+        );
+
+        // send to a session-specific destination
+        messagingTemplate.convertAndSend(
+                "/queue/errors-" + sessionId,
+                error
+        );
     }
 
     private String mapStatusToCode(ResponseStatusException e) {

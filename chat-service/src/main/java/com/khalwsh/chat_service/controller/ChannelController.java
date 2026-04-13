@@ -9,9 +9,11 @@ import com.khalwsh.chat_service.util.UserContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/chat")
@@ -26,7 +28,17 @@ public class ChannelController {
             HttpServletRequest httpRequest) {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
-        ChannelResponse response = channelService.createGroupChannel(request, user.getUserId());
+        if(!user.validate()){
+            return ResponseEntity.badRequest().build();
+        }
+
+        ChannelResponse response;
+        try {
+            response = channelService.createGroupChannel(request, user.getUserId());
+        }catch(DuplicateKeyException e){
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -38,6 +50,11 @@ public class ChannelController {
             HttpServletRequest httpRequest) {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+
+        if(!user.validate()){
+            return ResponseEntity.badRequest().build();
+        }
+
         PaginatedResponse<ChannelResponse> response = channelService.getWorkspaceChannels(workspaceId, user.getUserId(), page, limit);
         return ResponseEntity.ok(response);
     }
@@ -54,6 +71,11 @@ public class ChannelController {
             HttpServletRequest httpRequest) {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+
+        if(!user.validate()){
+            return ResponseEntity.badRequest().build();
+        }
+
         channelService.joinChannel(id, user.getUserId());
         return ResponseEntity.ok().build();
     }
@@ -64,6 +86,11 @@ public class ChannelController {
             HttpServletRequest httpRequest) {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+
+        if(!user.validate()){
+            return ResponseEntity.badRequest().build();
+        }
+
         channelService.leaveChannel(id, user.getUserId());
         return ResponseEntity.ok().build();
     }
@@ -74,6 +101,11 @@ public class ChannelController {
             HttpServletRequest httpRequest) {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+
+        if(!user.validate()){
+            return ResponseEntity.badRequest().build();
+        }
+
         ChannelResponse response = channelService.getOrCreateDm(user.getUserId(), request.getTargetUserId());
         return ResponseEntity.ok(response);
     }
@@ -85,6 +117,11 @@ public class ChannelController {
             HttpServletRequest httpRequest) {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+
+        if(!user.validate()){
+            return ResponseEntity.badRequest().build();
+        }
+
         PaginatedResponse<ChannelResponse> response = channelService.getDirectMessages(user.getUserId(), page, limit);
         return ResponseEntity.ok(response);
     }

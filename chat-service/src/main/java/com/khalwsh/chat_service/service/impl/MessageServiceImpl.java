@@ -95,7 +95,7 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     public List<MessageResponse> getChannelMessagesBefore(String channelId, String beforeId, int limit) {
-        PageRequest pageRequest = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt", "_id"));
+        PageRequest pageRequest = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC,  "_id"));
 
         return messageRepository.findChannelMessagesBefore(new ObjectId(channelId), new ObjectId(beforeId), pageRequest)
                 .stream()
@@ -105,7 +105,7 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     public List<MessageResponse> getChannelMessagesAfter(String channelId, String afterId, int limit) {
-        PageRequest pageRequest = PageRequest.of(0, limit, Sort.by(Sort.Direction.ASC, "createdAt", "_id"));
+        PageRequest pageRequest = PageRequest.of(0, limit, Sort.by(Sort.Direction.ASC,  "_id"));
 
         return messageRepository.findChannelMessagesAfter(new ObjectId(channelId), new ObjectId(afterId), pageRequest)
                 .stream()

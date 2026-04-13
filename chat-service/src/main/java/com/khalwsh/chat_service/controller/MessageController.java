@@ -29,6 +29,11 @@ public class MessageController {
             HttpServletRequest httpRequest) {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+
+        if(!user.validate()){
+            return ResponseEntity.badRequest().build();
+        }
+
         MessageResponse response = messageService.sendMessage(id, request, user.getUserId(), user.getRole());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -64,6 +69,11 @@ public class MessageController {
             HttpServletRequest httpRequest) {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+
+        if(!user.validate()){
+            return ResponseEntity.badRequest().build();
+        }
+
         MessageResponse response = messageService.editMessage(id, request.getContent(), user.getUserId(), user.getRole());
         return ResponseEntity.ok(response);
     }
@@ -74,6 +84,11 @@ public class MessageController {
             HttpServletRequest httpRequest) {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+
+        if(!user.validate()){
+            return ResponseEntity.badRequest().build();
+        }
+
         messageService.deleteMessage(id, user.getUserId(), user.getRole());
         return ResponseEntity.ok().build();
     }
