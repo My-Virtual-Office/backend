@@ -72,7 +72,7 @@ class ThreadCleanupServiceImplTest {
 
         // should not overwrite the existing deletedAt
         assertThat(alreadyDeleted.getDeletedAt()).isEqualTo(originalDeletedAt);
-        verify(messageRepository).saveAll(anyList());
+        verify(messageRepository, never()).saveAll(anyList());
     }
 
     @Test

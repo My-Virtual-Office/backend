@@ -93,22 +93,14 @@ public class ReadReceiptServiceImpl implements ReadReceiptService {
 
     // only move the cursor forward to avoid stale requests overwriting newer ones
     private void moveForwardOnly(String key, String newMessageId) {
-        String script =
-                "local current = redis.call('GET', KEYS[1]) " +
-                        "if not current then " +
-                        "  redis.call('SET', KEYS[1], ARGV[1]) " +
-                        "  return 1 " +
-                        "end " +
-                        "if current < ARGV[1] then " +
-                        "  redis.call('SET', KEYS[1], ARGV[1]) " +
-                        "  return 1 " +
-                        "end " +
-                        "return 0";
-
-        redisTemplate.execute(
-                new DefaultRedisScript<>(script, Long.class),
-                Collections.singletonList(key),
-                newMessageId
-        );
+        String current = redisTemplate.opsForValue().get(key);
+        if (current != null) {
+            ObjectId currentId = new ObjectId(current);
+            ObjectId newId = new ObjectId(newMessageId);
+            if (newId.compareTo(currentId) <= 0) {
+                return;  // not ahead, skip
+            }
+        }
+        redisTemplate.opsForValue().set(key, newMessageId);
     }
 }
