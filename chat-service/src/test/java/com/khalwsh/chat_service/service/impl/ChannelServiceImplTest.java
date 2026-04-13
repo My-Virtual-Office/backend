@@ -156,6 +156,21 @@ class ChannelServiceImplTest {
                     .isInstanceOf(ResponseStatusException.class)
                     .hasMessageContaining("workspaceId is required");
         }
+
+        @Test
+        void shouldThrowDuplicateKeyOnSameNameInWorkspace() {
+            CreateChannelRequest request = CreateChannelRequest.builder()
+                    .name("general")
+                    .workspaceId(1)
+                    .members(List.of(10))
+                    .build();
+            // the (workspaceId, name) unique index fires
+            when(channelRepository.save(any(Channel.class)))
+                    .thenThrow(new DuplicateKeyException("idx_workspace_name dup"));
+
+            assertThatThrownBy(() -> channelService.createGroupChannel(request, 10))
+                    .isInstanceOf(DuplicateKeyException.class);
+        }
     }
 
     // ────────────────────────────────────────

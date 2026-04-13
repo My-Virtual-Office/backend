@@ -10,6 +10,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
 import java.time.Duration;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -38,7 +39,7 @@ class WebSocketTicketServiceImplTest {
         void shouldReturnNonNullTicket() {
             when(redisTemplate.opsForValue()).thenReturn(valueOperations);
 
-            String ticket = webSocketTicketService.createTicket(10);
+            String ticket = webSocketTicketService.createTicket(10, "USER");
 
             assertThat(ticket).isNotNull().isNotBlank();
         }
@@ -47,11 +48,11 @@ class WebSocketTicketServiceImplTest {
         void shouldStoreTicketInRedisWithTtl() {
             when(redisTemplate.opsForValue()).thenReturn(valueOperations);
 
-            String ticket = webSocketTicketService.createTicket(10);
+            String ticket = webSocketTicketService.createTicket(10, "USER");
 
             verify(valueOperations).set(
                     eq("ws-ticket:" + ticket),
-                    eq("10"),
+                    eq("10:USER"),
                     eq(Duration.ofSeconds(60))
             );
         }
@@ -60,21 +61,34 @@ class WebSocketTicketServiceImplTest {
         void shouldGenerateUniqueTicketsPerCall() {
             when(redisTemplate.opsForValue()).thenReturn(valueOperations);
 
-            String ticket1 = webSocketTicketService.createTicket(10);
-            String ticket2 = webSocketTicketService.createTicket(10);
+            String ticket1 = webSocketTicketService.createTicket(10, "USER");
+            String ticket2 = webSocketTicketService.createTicket(10, "USER");
 
             assertThat(ticket1).isNotEqualTo(ticket2);
         }
 
         @Test
-        void shouldStoreUserIdAsString() {
+        void shouldStoreUserIdAndRole() {
             when(redisTemplate.opsForValue()).thenReturn(valueOperations);
 
-            webSocketTicketService.createTicket(42);
+            webSocketTicketService.createTicket(42, "ADMIN");
 
             verify(valueOperations).set(
                     anyString(),
-                    eq("42"),
+                    eq("42:ADMIN"),
+                    any(Duration.class)
+            );
+        }
+
+        @Test
+        void shouldDefaultNullRoleToUser() {
+            when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+
+            webSocketTicketService.createTicket(42, null);
+
+            verify(valueOperations).set(
+                    anyString(),
+                    eq("42:USER"),
                     any(Duration.class)
             );
         }
@@ -88,13 +102,27 @@ class WebSocketTicketServiceImplTest {
     class ValidateAndConsumeTicket {
 
         @Test
-        void shouldReturnUserIdForValidTicket() {
+        void shouldReturnUserIdAndRoleForValidTicket() {
             when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-            when(valueOperations.getAndDelete("ws-ticket:valid-ticket")).thenReturn("10");
+            when(valueOperations.getAndDelete("ws-ticket:valid-ticket")).thenReturn("10:USER");
 
-            Integer userId = webSocketTicketService.validateAndConsumeTicket("valid-ticket");
+            Map<String, Object> result = webSocketTicketService.validateAndConsumeTicket("valid-ticket");
 
-            assertThat(userId).isEqualTo(10);
+            assertThat(result).isNotNull();
+            assertThat(result.get("userId")).isEqualTo(10);
+            assertThat(result.get("userRole")).isEqualTo("USER");
+        }
+
+        @Test
+        void shouldReturnAdminRole() {
+            when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+            when(valueOperations.getAndDelete("ws-ticket:admin-ticket")).thenReturn("42:ADMIN");
+
+            Map<String, Object> result = webSocketTicketService.validateAndConsumeTicket("admin-ticket");
+
+            assertThat(result).isNotNull();
+            assertThat(result.get("userId")).isEqualTo(42);
+            assertThat(result.get("userRole")).isEqualTo("ADMIN");
         }
 
         @Test
@@ -102,16 +130,16 @@ class WebSocketTicketServiceImplTest {
             when(redisTemplate.opsForValue()).thenReturn(valueOperations);
             when(valueOperations.getAndDelete("ws-ticket:invalid-ticket")).thenReturn(null);
 
-            Integer userId = webSocketTicketService.validateAndConsumeTicket("invalid-ticket");
+            Map<String, Object> result = webSocketTicketService.validateAndConsumeTicket("invalid-ticket");
 
-            assertThat(userId).isNull();
+            assertThat(result).isNull();
         }
 
         @Test
         void shouldReturnNullForNullTicket() {
-            Integer userId = webSocketTicketService.validateAndConsumeTicket(null);
+            Map<String, Object> result = webSocketTicketService.validateAndConsumeTicket(null);
 
-            assertThat(userId).isNull();
+            assertThat(result).isNull();
             // should not even touch Redis
             verifyNoInteractions(redisTemplate);
         }
@@ -119,7 +147,7 @@ class WebSocketTicketServiceImplTest {
         @Test
         void shouldDeleteTicketOnConsumption() {
             when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-            when(valueOperations.getAndDelete("ws-ticket:one-time")).thenReturn("10");
+            when(valueOperations.getAndDelete("ws-ticket:one-time")).thenReturn("10:USER");
 
             webSocketTicketService.validateAndConsumeTicket("one-time");
 
@@ -128,17 +156,18 @@ class WebSocketTicketServiceImplTest {
         }
 
         @Test
-        void shouldNotReturnUserIdOnSecondUse() {
+        void shouldNotReturnDataOnSecondUse() {
             when(redisTemplate.opsForValue()).thenReturn(valueOperations);
             // first call succeeds
             when(valueOperations.getAndDelete("ws-ticket:used-ticket"))
-                    .thenReturn("10")   // first call
-                    .thenReturn(null);  // second call — ticket already consumed
+                    .thenReturn("10:USER")   // first call
+                    .thenReturn(null);       // second call — ticket already consumed
 
-            Integer first = webSocketTicketService.validateAndConsumeTicket("used-ticket");
-            Integer second = webSocketTicketService.validateAndConsumeTicket("used-ticket");
+            Map<String, Object> first = webSocketTicketService.validateAndConsumeTicket("used-ticket");
+            Map<String, Object> second = webSocketTicketService.validateAndConsumeTicket("used-ticket");
 
-            assertThat(first).isEqualTo(10);
+            assertThat(first).isNotNull();
+            assertThat(first.get("userId")).isEqualTo(10);
             assertThat(second).isNull();
         }
     }

@@ -217,6 +217,27 @@ class MessageServiceImplTest {
 
             verify(messageRepository).save(any(Message.class));
         }
+
+        @Test
+        void shouldNormalizeBlankClientMessageIdToNull() {
+            when(channelService.isMember(channelId.toHexString(), 10)).thenReturn(true);
+            when(messageRepository.save(any(Message.class))).thenAnswer(inv -> {
+                Message m = inv.getArgument(0);
+                m.setId(new ObjectId());
+                return m;
+            });
+
+            SendMessageRequest request = SendMessageRequest.builder()
+                    .content("test")
+                    .clientMessageId("   ")  // blank, should become null
+                    .build();
+
+            messageService.sendMessage(channelId.toHexString(), request, 10, "USER");
+
+            ArgumentCaptor<Message> captor = ArgumentCaptor.forClass(Message.class);
+            verify(messageRepository).save(captor.capture());
+            assertThat(captor.getValue().getClientMessageId()).isNull();
+        }
     }
 
     // ────────────────────────────────────────
@@ -384,12 +405,14 @@ class MessageServiceImplTest {
         @Test
         void shouldSoftDeleteOwnMessage() {
             when(messageRepository.findById(messageId)).thenReturn(Optional.of(existingMessage));
+            when(messageRepository.save(any(Message.class))).thenReturn(existingMessage);
 
-            messageService.deleteMessage(messageId.toHexString(), 10, "USER");
+            MessageResponse response = messageService.deleteMessage(messageId.toHexString(), 10, "USER");
 
             assertThat(existingMessage.getDeleted()).isTrue();
             assertThat(existingMessage.getContent()).isNull();
             assertThat(existingMessage.getDeletedAt()).isNotNull();
+            assertThat(response).isNotNull();
             verify(messageRepository).save(existingMessage);
         }
 
@@ -397,10 +420,12 @@ class MessageServiceImplTest {
         void shouldAllowAdminToDeleteNormalUserMessage() {
             existingMessage.setSenderRole("USER");
             when(messageRepository.findById(messageId)).thenReturn(Optional.of(existingMessage));
+            when(messageRepository.save(any(Message.class))).thenReturn(existingMessage);
 
-            messageService.deleteMessage(messageId.toHexString(), 99, "ADMIN");
+            MessageResponse response = messageService.deleteMessage(messageId.toHexString(), 99, "ADMIN");
 
             assertThat(existingMessage.getDeleted()).isTrue();
+            assertThat(response).isNotNull();
             verify(messageRepository).save(existingMessage);
         }
 
@@ -424,12 +449,13 @@ class MessageServiceImplTest {
         }
 
         @Test
-        void shouldNoOpIfAlreadyDeleted() {
+        void shouldReturnNullIfAlreadyDeleted() {
             existingMessage.setDeleted(true);
             when(messageRepository.findById(messageId)).thenReturn(Optional.of(existingMessage));
 
-            messageService.deleteMessage(messageId.toHexString(), 10, "USER");
+            MessageResponse response = messageService.deleteMessage(messageId.toHexString(), 10, "USER");
 
+            assertThat(response).isNull();
             verify(messageRepository, never()).save(any());
         }
 
@@ -445,6 +471,7 @@ class MessageServiceImplTest {
         @Test
         void shouldSetDeletedAtTimestamp() {
             when(messageRepository.findById(messageId)).thenReturn(Optional.of(existingMessage));
+            when(messageRepository.save(any(Message.class))).thenReturn(existingMessage);
 
             messageService.deleteMessage(messageId.toHexString(), 10, "USER");
 
@@ -457,10 +484,12 @@ class MessageServiceImplTest {
             existingMessage.setSenderId(99);
             existingMessage.setSenderRole("ADMIN");
             when(messageRepository.findById(messageId)).thenReturn(Optional.of(existingMessage));
+            when(messageRepository.save(any(Message.class))).thenReturn(existingMessage);
 
-            messageService.deleteMessage(messageId.toHexString(), 99, "ADMIN");
+            MessageResponse response = messageService.deleteMessage(messageId.toHexString(), 99, "ADMIN");
 
             assertThat(existingMessage.getDeleted()).isTrue();
+            assertThat(response).isNotNull();
         }
     }
 }

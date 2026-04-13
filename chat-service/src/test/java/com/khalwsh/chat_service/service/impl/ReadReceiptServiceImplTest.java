@@ -11,6 +11,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.script.RedisScript;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,48 +43,32 @@ class ReadReceiptServiceImplTest {
     class ChannelMarkAsRead {
 
         @Test
-        void shouldSetLastReadMessageId() {
+        void shouldCallLuaScriptWithCorrectKey() {
             String channelId = new ObjectId().toHexString();
-            ObjectId messageIdObj = new ObjectId();
-            String messageId = messageIdObj.toHexString();
-
-            when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-            when(valueOperations.get("read:" + channelId + ":10")).thenReturn(null);
+            String messageId = new ObjectId().toHexString();
 
             readReceiptService.markAsRead(channelId, 10, messageId);
 
-            verify(valueOperations).set("read:" + channelId + ":10", messageId);
+            // lua script should be called with the correct key and message id
+            verify(redisTemplate).execute(
+                    any(RedisScript.class),
+                    eq(List.of("read:" + channelId + ":10")),
+                    eq(messageId)
+            );
         }
 
         @Test
-        void shouldMoveForwardOnly() {
+        void shouldFormCorrectRedisKeyForChannel() {
             String channelId = new ObjectId().toHexString();
-            // create two ObjectIds where newer > older in timestamp
-            ObjectId older = new ObjectId();
-            // small delay to ensure different timestamps
-            ObjectId newer = new ObjectId();
+            String messageId = new ObjectId().toHexString();
 
-            when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-            when(valueOperations.get("read:" + channelId + ":10")).thenReturn(newer.toHexString());
+            readReceiptService.markAsRead(channelId, 42, messageId);
 
-            // trying to move cursor backward — should be ignored
-            readReceiptService.markAsRead(channelId, 10, older.toHexString());
-
-            verify(valueOperations, never()).set(anyString(), eq(older.toHexString()));
-        }
-
-        @Test
-        void shouldMoveForwardWhenNewerIdProvided() {
-            String channelId = new ObjectId().toHexString();
-            ObjectId older = new ObjectId();
-            ObjectId newer = new ObjectId();
-
-            when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-            when(valueOperations.get("read:" + channelId + ":10")).thenReturn(older.toHexString());
-
-            readReceiptService.markAsRead(channelId, 10, newer.toHexString());
-
-            verify(valueOperations).set("read:" + channelId + ":10", newer.toHexString());
+            verify(redisTemplate).execute(
+                    any(RedisScript.class),
+                    eq(List.of("read:" + channelId + ":42")),
+                    eq(messageId)
+            );
         }
     }
 
@@ -128,45 +115,47 @@ class ReadReceiptServiceImplTest {
     class ThreadMarkAsRead {
 
         @Test
-        void shouldSetLastReadForThread() {
+        void shouldCallLuaScriptForThread() {
             String threadId = new ObjectId().toHexString();
-            ObjectId messageIdObj = new ObjectId();
-            String messageId = messageIdObj.toHexString();
-
-            when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-            when(valueOperations.get("read:thread:" + threadId + ":10")).thenReturn(null);
+            String messageId = new ObjectId().toHexString();
 
             readReceiptService.markThreadAsRead(threadId, 10, messageId);
 
-            verify(valueOperations).set("read:thread:" + threadId + ":10", messageId);
+            verify(redisTemplate).execute(
+                    any(RedisScript.class),
+                    eq(List.of("read:thread:" + threadId + ":10")),
+                    eq(messageId)
+            );
         }
 
         @Test
         void shouldUseThreadKeyPrefix() {
             String threadId = new ObjectId().toHexString();
-            ObjectId messageIdObj = new ObjectId();
+            String messageId = new ObjectId().toHexString();
 
-            when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-            when(valueOperations.get("read:thread:" + threadId + ":10")).thenReturn(null);
-
-            readReceiptService.markThreadAsRead(threadId, 10, messageIdObj.toHexString());
+            readReceiptService.markThreadAsRead(threadId, 10, messageId);
 
             // verify the correct key prefix is used (not channel key)
-            verify(valueOperations).get("read:thread:" + threadId + ":10");
+            verify(redisTemplate).execute(
+                    any(RedisScript.class),
+                    eq(List.of("read:thread:" + threadId + ":10")),
+                    eq(messageId)
+            );
         }
 
         @Test
-        void shouldMoveForwardOnlyForThreads() {
+        void shouldNotUseChannelKeyForThreadMark() {
             String threadId = new ObjectId().toHexString();
-            ObjectId older = new ObjectId();
-            ObjectId newer = new ObjectId();
+            String messageId = new ObjectId().toHexString();
 
-            when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-            when(valueOperations.get("read:thread:" + threadId + ":10")).thenReturn(newer.toHexString());
+            readReceiptService.markThreadAsRead(threadId, 10, messageId);
 
-            readReceiptService.markThreadAsRead(threadId, 10, older.toHexString());
-
-            verify(valueOperations, never()).set(anyString(), eq(older.toHexString()));
+            // should NOT call with a channel-style key
+            verify(redisTemplate, never()).execute(
+                    any(RedisScript.class),
+                    eq(List.of("read:" + threadId + ":10")),
+                    eq(messageId)
+            );
         }
     }
 
