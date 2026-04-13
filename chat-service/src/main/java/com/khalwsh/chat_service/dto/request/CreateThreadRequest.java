@@ -1,6 +1,7 @@
 package com.khalwsh.chat_service.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,9 +14,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CreateThreadRequest {
 
-    @NotNull(message = "rootMessageId is required")
+    @NotNull(message = "rootMessageId is required") @NotBlank @NotEmpty
     private String rootMessageId;
 
-    @NotBlank(message = "thread name is required")
+    @NotBlank(message = "thread name is required")  @NotEmpty @NotNull
     private String name;
 }

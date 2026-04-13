@@ -431,7 +431,7 @@ All WebSocket messages come wrapped in this format:
 
 ### Error Handling (STOMP)
 
-Errors are sent to `/user/queue/errors`:
+Errors are sent to `/queue/errors-{sessionId}`:
 ```json
 {
   "action": "ERROR",
