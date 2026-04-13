@@ -415,7 +415,7 @@ All WebSocket messages come wrapped in this format:
 |---|---|---|
 | `NEW_MESSAGE` | `MessageResponse` | someone sent a message |
 | `EDIT_MESSAGE` | `MessageResponse` | someone edited a message |
-| `DELETE_MESSAGE` | `MessageResponse` | someone deleted a message |
+| `DELETE_MESSAGE` | `{ messageId }` | someone deleted a message |
 | `TYPING` | `TypingNotification` | someone started/stopped typing |
 | `THREAD_DELETED` | thread info | a thread was soft-deleted |
 
@@ -431,7 +431,7 @@ All WebSocket messages come wrapped in this format:
 
 ### Error Handling (STOMP)
 
-Errors are sent to `/queue/errors-{sessionId}`:
+Errors are sent to `/user/queue/errors` (subscribe to this path to receive error notifications):
 ```json
 {
   "action": "ERROR",
@@ -468,7 +468,7 @@ All REST errors follow this shape:
 | `400` | validation failures, bad input |
 | `403` | not a member, can't edit/delete someone else's stuff |
 | `404` | channel/message/thread not found |
-| `409` | duplicate thread for the same root message |
+| `409` | duplicate thread for the same root message, or duplicate channel name in the same workspace |
 | `503` | MongoDB or Redis is down |
 
 ---

@@ -6,6 +6,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -19,22 +20,27 @@ public class WebSocketTicketServiceImpl implements WebSocketTicketService {
     private static final String KEY_PREFIX = "ws-ticket:";
 
     @Override
-    public String createTicket(Integer userId) {
+    public String createTicket(Integer userId, String role) {
         String ticket = UUID.randomUUID().toString();
-        // ws-ticket:{ticket} -> userId
-        redisTemplate.opsForValue().set(KEY_PREFIX + ticket, userId.toString(), TICKET_TTL);
+        // store as "userId:role" so the handshake can recover both
+        String value = userId + ":" + (role != null ? role : "USER");
+        redisTemplate.opsForValue().set(KEY_PREFIX + ticket, value, TICKET_TTL);
         return ticket;
     }
 
     @Override
-    public Integer validateAndConsumeTicket(String ticket) {
+    public Map<String, Object> validateAndConsumeTicket(String ticket) {
         if (ticket == null) return null;
 
         String key = KEY_PREFIX + ticket;
         // get + delete in one shot so it can't be reused
-        String userId = redisTemplate.opsForValue().getAndDelete(key);
-        if (userId == null) return null;
+        String value = redisTemplate.opsForValue().getAndDelete(key);
+        if (value == null) return null;
 
-        return Integer.parseInt(userId);
+        // value format: "userId:role"
+        String[] parts = value.split(":", 2);
+        Integer userId = Integer.parseInt(parts[0]);
+        String role = parts.length > 1 ? parts[1] : "USER";
+        return Map.of("userId", userId, "userRole", role);
     }
 }

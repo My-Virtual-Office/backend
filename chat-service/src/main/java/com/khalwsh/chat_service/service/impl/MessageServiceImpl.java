@@ -181,13 +181,13 @@ public class MessageServiceImpl implements MessageService {
     // --- soft delete ---
 
     @Override
-    public void deleteMessage(String messageId, Integer requestingUserId, String requestingUserRole) {
+    public MessageResponse deleteMessage(String messageId, Integer requestingUserId, String requestingUserRole) {
         ObjectId msgId = new ObjectId(messageId);
         Message message = messageRepository.findById(msgId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "message not found"));
 
         if (message.getDeleted()) {
-            return; // already deleted, nothing to do
+            return null; // already deleted, nothing to do
         }
 
         boolean isOwner = message.getSenderId().equals(requestingUserId);
@@ -210,7 +210,8 @@ public class MessageServiceImpl implements MessageService {
         message.setDeletedAt(Instant.now());
         message.setUpdatedAt(Instant.now());
 
-        messageRepository.save(message);
+        Message saved = messageRepository.save(message);
+        return DtoMapper.toMessageResponse(saved);
     }
 
     // string -> ObjectId, null-safe

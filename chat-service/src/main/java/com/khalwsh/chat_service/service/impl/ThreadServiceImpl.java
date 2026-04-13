@@ -110,10 +110,6 @@ public class ThreadServiceImpl implements ThreadService {
         ChatThread thread = threadRepository.findActiveById(threadOid)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "thread not found"));
 
-        if (thread.getDeleted()) {
-            return; // already deleted
-        }
-
         boolean isCreator = thread.getCreatedBy().equals(requestingUserId);
         boolean isAdmin = "ADMIN".equalsIgnoreCase(requestingUserRole);
 

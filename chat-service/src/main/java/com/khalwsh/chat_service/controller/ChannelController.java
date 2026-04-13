@@ -8,6 +8,8 @@ import com.khalwsh.chat_service.service.ChannelService;
 import com.khalwsh.chat_service.util.UserContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
@@ -28,9 +30,6 @@ public class ChannelController {
             HttpServletRequest httpRequest) {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
-        if(!user.validate()){
-            return ResponseEntity.badRequest().build();
-        }
 
         ChannelResponse response;
         try {
@@ -45,22 +44,28 @@ public class ChannelController {
     @GetMapping("/channels")
     public ResponseEntity<PaginatedResponse<ChannelResponse>> getChannels(
             @RequestParam Integer workspaceId,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(defaultValue = "1") @Min(1) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit,
             HttpServletRequest httpRequest) {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
-
-        if(!user.validate()){
-            return ResponseEntity.badRequest().build();
-        }
 
         PaginatedResponse<ChannelResponse> response = channelService.getWorkspaceChannels(workspaceId, user.getUserId(), page, limit);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/channels/{id}")
-    public ResponseEntity<ChannelResponse> getChannel(@PathVariable String id) {
+    public ResponseEntity<ChannelResponse> getChannel(
+            @PathVariable String id,
+            HttpServletRequest httpRequest) {
+
+        UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+
+        // must be a member to view channel details
+        if (!channelService.isMember(id, user.getUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not a member of this channel");
+        }
+
         ChannelResponse response = channelService.getChannel(id);
         return ResponseEntity.ok(response);
     }
@@ -71,10 +76,6 @@ public class ChannelController {
             HttpServletRequest httpRequest) {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
-
-        if(!user.validate()){
-            return ResponseEntity.badRequest().build();
-        }
 
         channelService.joinChannel(id, user.getUserId());
         return ResponseEntity.ok().build();
@@ -87,10 +88,6 @@ public class ChannelController {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
 
-        if(!user.validate()){
-            return ResponseEntity.badRequest().build();
-        }
-
         channelService.leaveChannel(id, user.getUserId());
         return ResponseEntity.ok().build();
     }
@@ -102,25 +99,17 @@ public class ChannelController {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
 
-        if(!user.validate()){
-            return ResponseEntity.badRequest().build();
-        }
-
         ChannelResponse response = channelService.getOrCreateDm(user.getUserId(), request.getTargetUserId());
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/dm")
     public ResponseEntity<PaginatedResponse<ChannelResponse>> getDirectMessages(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(defaultValue = "1") @Min(1) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit,
             HttpServletRequest httpRequest) {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
-
-        if(!user.validate()){
-            return ResponseEntity.badRequest().build();
-        }
 
         PaginatedResponse<ChannelResponse> response = channelService.getDirectMessages(user.getUserId(), page, limit);
         return ResponseEntity.ok(response);

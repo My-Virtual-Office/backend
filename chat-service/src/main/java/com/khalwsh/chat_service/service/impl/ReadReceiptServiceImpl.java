@@ -19,6 +19,22 @@ public class ReadReceiptServiceImpl implements ReadReceiptService {
     private final StringRedisTemplate redisTemplate;
     private final MessageRepository messageRepository;
 
+    // lua script for atomic forward-only cursor update
+    // compares the new messageId with the current one and only writes if it's ahead
+    private static final DefaultRedisScript<Boolean> MOVE_FORWARD_SCRIPT;
+    static {
+        MOVE_FORWARD_SCRIPT = new DefaultRedisScript<>();
+        MOVE_FORWARD_SCRIPT.setScriptText(
+                "local current = redis.call('GET', KEYS[1]) " +
+                "if not current or ARGV[1] > current then " +
+                "  redis.call('SET', KEYS[1], ARGV[1]) " +
+                "  return 1 " +
+                "end " +
+                "return 0"
+        );
+        MOVE_FORWARD_SCRIPT.setResultType(Boolean.class);
+    }
+
     // --- channel reads ---
     // key format: read:{channelId}:{userId} -> lastReadMessageId
 
@@ -91,16 +107,14 @@ public class ReadReceiptServiceImpl implements ReadReceiptService {
 
     // --- helpers ---
 
-    // only move the cursor forward to avoid stale requests overwriting newer ones
+    // atomic forward-only cursor update via lua script
+    // prevents race conditions where two concurrent requests could overwrite each other
     private void moveForwardOnly(String key, String newMessageId) {
-        String current = redisTemplate.opsForValue().get(key);
-        if (current != null) {
-            ObjectId currentId = new ObjectId(current);
-            ObjectId newId = new ObjectId(newMessageId);
-            if (newId.compareTo(currentId) <= 0) {
-                return;  // not ahead, skip
-            }
-        }
-        redisTemplate.opsForValue().set(key, newMessageId);
+        redisTemplate.execute(
+                MOVE_FORWARD_SCRIPT,
+                Collections.singletonList(key),
+                newMessageId
+        );
     }
 }
+
