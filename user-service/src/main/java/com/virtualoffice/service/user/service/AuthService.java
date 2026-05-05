@@ -1,0 +1,71 @@
+package com.virtualoffice.service.user.service;
+
+import com.virtualoffice.service.user.domain.entity.User;
+import com.virtualoffice.service.user.domain.enumuration.AccountStatus;
+import com.virtualoffice.service.user.dto.AuthResponse;
+import com.virtualoffice.service.user.dto.LoginRequest;
+import com.virtualoffice.service.user.dto.RegisterRequest;
+import com.virtualoffice.service.user.repository.UserRepository;
+import com.virtualoffice.service.user.security.JwtUtil;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class AuthService {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
+    private final AuthenticationManager authenticationManager;
+
+    public AuthResponse register(RegisterRequest request) {
+
+        // Check if email is already taken
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email already in use: " + request.getEmail());
+        }
+
+        // Build and save the new user
+        User user = User.builder()
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword())) // hash the password
+                .phoneNumber(request.getPhoneNumber())
+                .accountStatus(AccountStatus.ACTIVE)
+                .isEmailVerified(false)
+                .isPhoneVerified(false)
+                .isDisabled(false)
+                .build();
+
+        userRepository.save(user);
+
+        // Generate a JWT token for the new user
+        String token = jwtUtil.generateToken(user.getEmail());
+
+        // Return the token
+        return new AuthResponse(token, user.getEmail(), user.getFirstName(), user.getLastName());
+    }
+
+    public AuthResponse login(LoginRequest request) {
+
+        // Check Authentication first
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getEmail(),
+                        request.getPassword()
+                )
+        );
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String token = jwtUtil.generateToken(user.getEmail());
+
+        return new AuthResponse(token, user.getEmail(), user.getFirstName(), user.getLastName());
+    }
+}

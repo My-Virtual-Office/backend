@@ -4,6 +4,9 @@ import com.virtualoffice.service.user.domain.enumuration.AccountStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "users")
 @Getter
@@ -12,9 +15,10 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     @Column(name = "first_name", nullable = false, length = 100)
     private String firstName;
@@ -25,23 +29,26 @@ public class User {
     @Column(nullable = false, length = 100, unique = true)
     private String email;
 
-    @Column(name = "phone_number", nullable = true, length = 20)
+    @Column(name = "phone_number", length = 20)
     private String phoneNumber;
 
     @Column(name = "password_hash", nullable = false, length = 255)
     private String password;
 
-    @Column(name = "account_status", nullable = false)
     @Enumerated(EnumType.STRING)
+    @Column(name = "account_status", nullable = false)
     private AccountStatus accountStatus = AccountStatus.ACTIVE;
 
     @Column(name = "is_email_verified", nullable = false)
     private boolean isEmailVerified;
 
-    @Column(name = "is_phone_number_verified", nullable = false)
+    @Column(name = "is_phone_verified", nullable = false)
     private boolean isPhoneVerified;
 
     @Column(name = "is_disabled", nullable = false)
     private boolean isDisabled;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<VerificationRequest> verificationRequests = new ArrayList<>();
 }
