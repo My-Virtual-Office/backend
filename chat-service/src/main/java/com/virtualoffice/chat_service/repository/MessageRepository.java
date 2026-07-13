@@ -67,6 +67,13 @@ public interface MessageRepository extends MongoRepository<Message, ObjectId> {
     @Query(value = "{ 'threadId': ?0 }", count = true)
     long countThreadMessages(ObjectId threadId);
 
+    // whether an unread channel message mentions the given user
+    @Query(value = "{ 'channelId': ?0, 'threadId': null, 'mentions': ?1, '_id': { $gt: ?2 } }", exists = true)
+    boolean existsChannelMentionAfter(ObjectId channelId, Integer userId, ObjectId afterMessageId);
+
+    @Query(value = "{ 'channelId': ?0, 'threadId': null, 'mentions': ?1 }", exists = true)
+    boolean existsChannelMention(ObjectId channelId, Integer userId);
+
     @Query("{ 'threadId': ?0 }")
     List<Message> findAllByThreadId(ObjectId threadId);
 }

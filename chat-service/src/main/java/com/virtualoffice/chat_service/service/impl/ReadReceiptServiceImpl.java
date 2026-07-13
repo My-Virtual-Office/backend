@@ -78,9 +78,15 @@ public class ReadReceiptServiceImpl implements ReadReceiptService {
                 : messageRepository.countChannelMessagesAfter(
                         new ObjectId(channelId), new ObjectId(lastReadMessageId));
 
+        boolean mentioned = unreadCount > 0 && ((lastReadMessageId == null)
+                ? messageRepository.existsChannelMention(new ObjectId(channelId), userId)
+                : messageRepository.existsChannelMentionAfter(
+                        new ObjectId(channelId), userId, new ObjectId(lastReadMessageId)));
+
         return UnreadCountResponse.builder()
                 .unreadCount(unreadCount)
                 .lastReadMessageId(lastReadMessageId)
+                .mentioned(mentioned)
                 .build();
     }
 
