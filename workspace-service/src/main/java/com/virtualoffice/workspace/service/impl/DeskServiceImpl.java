@@ -138,6 +138,10 @@ public class DeskServiceImpl implements DeskService {
             if (desk.getRole() == WorkspaceRole.OWNER) {
                 throw new ConflictException("the workspace owner's role cannot be changed");
             }
+            if (request.role() == WorkspaceRole.OWNER) {
+                // Prevent a second OWNER; ownership transfer is a separate deliberate flow.
+                throw new ConflictException("cannot grant OWNER; use ownership transfer instead");
+            }
             desk.setRole(request.role());
         }
         if (request.title() != null) {
