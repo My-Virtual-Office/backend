@@ -18,12 +18,16 @@
 package com.virtualoffice.chat_service.service;
 
 import com.virtualoffice.chat_service.dto.request.CreateChannelRequest;
+import com.virtualoffice.chat_service.dto.request.UpdateChannelRequest;
 import com.virtualoffice.chat_service.dto.response.ChannelResponse;
 import com.virtualoffice.chat_service.dto.response.PaginatedResponse;
 
 public interface ChannelService {
 
     ChannelResponse createGroupChannel(CreateChannelRequest request, Integer creatorUserId);
+
+    /** Update channel settings (name/description/access). Creator or moderator only. */
+    ChannelResponse updateChannel(String channelId, UpdateChannelRequest request, Integer userId);
 
     PaginatedResponse<ChannelResponse> getWorkspaceChannels(Integer workspaceId, Integer userId, int page, int limit);
 

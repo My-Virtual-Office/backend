@@ -18,6 +18,7 @@
 package com.virtualoffice.chat_service.controller;
 
 import com.virtualoffice.chat_service.dto.request.CreateChannelRequest;
+import com.virtualoffice.chat_service.dto.request.UpdateChannelRequest;
 import com.virtualoffice.chat_service.dto.request.CreateDmRequest;
 import com.virtualoffice.chat_service.dto.response.ChannelResponse;
 import com.virtualoffice.chat_service.dto.response.PaginatedResponse;
@@ -56,6 +57,16 @@ public class ChannelController {
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PatchMapping("/channels/{id}")
+    public ResponseEntity<ChannelResponse> updateChannel(
+            @PathVariable String id,
+            @Valid @RequestBody UpdateChannelRequest request,
+            HttpServletRequest httpRequest) {
+
+        UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+        return ResponseEntity.ok(channelService.updateChannel(id, request, user.getUserId()));
     }
 
     @GetMapping("/channels")
