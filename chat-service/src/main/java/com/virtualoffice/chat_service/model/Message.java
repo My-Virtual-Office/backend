@@ -65,6 +65,8 @@ public class Message {
     // emoji -> userIds who reacted with it
     private Map<String, List<Integer>> reactions;
 
+    private List<Attachment> attachments;
+
     private String clientMessageId;
 
     @Builder.Default

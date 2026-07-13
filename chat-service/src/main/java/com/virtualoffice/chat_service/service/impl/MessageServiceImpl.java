@@ -103,6 +103,7 @@ public class MessageServiceImpl implements MessageService {
                 .threadId(threadOid)
                 .replyToId(replyOid)
                 .mentions(request.getMentions())
+                .attachments(request.getAttachments())
                 .clientMessageId(clientMsgId)
                 .deleted(false)
                 .createdAt(now)

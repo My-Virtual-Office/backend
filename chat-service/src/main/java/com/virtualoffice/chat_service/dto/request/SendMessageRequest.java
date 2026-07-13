@@ -17,7 +17,7 @@
  */
 package com.virtualoffice.chat_service.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
+import com.virtualoffice.chat_service.model.Attachment;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,12 +31,13 @@ import java.util.List;
 @AllArgsConstructor
 public class SendMessageRequest {
 
-    @NotBlank(message = "content is required")
+    // Optional: a message may carry only attachments (no text).
     private String content;
 
     private String threadId;
     private String replyToId;
     private List<Integer> mentions;
+    private List<Attachment> attachments;
 
     // client-generated UUID — repeat sends with the same id are deduplicated server-side
     private String clientMessageId;
