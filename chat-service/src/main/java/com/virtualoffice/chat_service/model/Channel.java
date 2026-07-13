@@ -50,6 +50,17 @@ public class Channel {
     @Indexed
     private List<Integer> members;
 
+    private String description;
+
+    // Access control (Phase 3): PUBLIC = any workspace member may see/join; PRIVATE = members only.
+    private String visibility; // "PUBLIC" | "PRIVATE" (defaults to PUBLIC when null)
+
+    // Teams granted access (workspace-service team ids). Members of these teams may join a channel.
+    private List<Long> allowedTeamIds;
+
+    // Subset of members who can moderate (manage the channel, delete others' messages).
+    private List<Integer> moderatorIds;
+
     private String dmKey;
 
     // True for the single canonical per-workspace channel provisioned from workspace.channel.event.
