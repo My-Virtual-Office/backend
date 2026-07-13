@@ -56,6 +56,23 @@ public class ReadReceiptController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/channels/{id}/mark-unread")
+    public ResponseEntity<Void> markAsUnread(
+            @PathVariable String id,
+            @Valid @RequestBody MarkReadRequest request,
+            HttpServletRequest httpRequest) {
+
+        UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+
+        if (!channelService.isMember(id, user.getUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not a member of this channel");
+        }
+
+        // reuses MarkReadRequest — its message id is the point to mark unread from
+        readReceiptService.markAsUnreadFrom(id, user.getUserId(), request.getLastReadMessageId());
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/channels/{id}/unread")
     public ResponseEntity<UnreadCountResponse> getUnreadCount(
             @PathVariable String id,

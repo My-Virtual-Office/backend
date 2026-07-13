@@ -23,6 +23,8 @@ public interface ReadReceiptService {
 
     void markAsRead(String channelId, Integer userId, String lastReadMessageId);
 
+    void markAsUnreadFrom(String channelId, Integer userId, String messageId);
+
     UnreadCountResponse getUnreadCount(String channelId, Integer userId);
 
     void markThreadAsRead(String threadId, Integer userId, String lastReadMessageId);

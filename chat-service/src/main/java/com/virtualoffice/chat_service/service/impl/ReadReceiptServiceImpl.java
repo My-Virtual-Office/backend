@@ -23,13 +23,17 @@ import com.virtualoffice.chat_service.repository.MessageRepository;
 import com.virtualoffice.chat_service.service.ReadReceiptService;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -66,6 +70,24 @@ public class ReadReceiptServiceImpl implements ReadReceiptService {
     public void markAsRead(String channelId, Integer userId, String lastReadMessageId) {
         validateChannelMessage(channelId, lastReadMessageId);
         moveForwardOnly(channelKey(channelId, userId), new ObjectId(lastReadMessageId).toHexString());
+    }
+
+    @Override
+    public void markAsUnreadFrom(String channelId, Integer userId, String messageId) {
+        validateChannelMessage(channelId, messageId);
+        // Move the read cursor to the message just before the selected one, so the
+        // selected message and everything after it become unread again.
+        List<Message> before = messageRepository.findChannelMessagesBefore(
+                new ObjectId(channelId), new ObjectId(messageId),
+                PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "_id")));
+        String key = channelKey(channelId, userId);
+        if (before.isEmpty()) {
+            redisTemplate.delete(key); // selected is the first message -> whole channel unread
+        } else {
+            // explicit backward set (moveForwardOnly would refuse this)
+            redisTemplate.opsForValue().set(
+                    key, before.get(0).getId().toHexString(), Duration.ofSeconds(CURSOR_TTL_SECONDS));
+        }
     }
 
     @Override
