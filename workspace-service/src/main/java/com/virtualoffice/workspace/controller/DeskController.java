@@ -18,6 +18,7 @@
 package com.virtualoffice.workspace.controller;
 
 import com.virtualoffice.workspace.dto.request.UpdateDeskRequest;
+import com.virtualoffice.workspace.dto.request.UpdateMembershipRequest;
 import com.virtualoffice.workspace.dto.request.UpdateStatusRequest;
 import com.virtualoffice.workspace.dto.response.DeskResponse;
 import com.virtualoffice.workspace.dto.response.PageResponse;
@@ -93,6 +94,17 @@ public class DeskController {
                                      HttpServletRequest http) {
         Long userId = UserContext.fromRequest(http).getUserId();
         return deskService.updateStatus(workspaceId, deskId, request, userId);
+    }
+
+    @Operation(summary = "Update a member's membership",
+            description = "Requires ADMIN. Sets another member's role / title / team (teamId 0 unassigns).")
+    @PatchMapping("/{deskId}/membership")
+    public DeskResponse updateMembership(@PathVariable Long workspaceId,
+                                         @PathVariable Long deskId,
+                                         @Valid @RequestBody UpdateMembershipRequest request,
+                                         HttpServletRequest http) {
+        Long userId = UserContext.fromRequest(http).getUserId();
+        return deskService.updateMembership(workspaceId, deskId, request, userId);
     }
 
     @Operation(summary = "Remove a member", description = "Requires ADMIN. Deactivates the desk. 409 for the OWNER desk.")
