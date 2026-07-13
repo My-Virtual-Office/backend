@@ -97,6 +97,19 @@ public class MessageController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/messages/{id}/reactions")
+    public ResponseEntity<MessageResponse> react(
+            @PathVariable String id,
+            @RequestParam String emoji,
+            HttpServletRequest httpRequest) {
+
+        UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+        MessageResponse response = messageService.toggleReaction(id, emoji, user.getUserId());
+        broadcastMessageEvent(WebSocketEvent.REACTION, response);
+
+        return ResponseEntity.ok(response);
+    }
+
     @DeleteMapping("/messages/{id}")
     public ResponseEntity<Void> deleteMessage(
             @PathVariable String id,

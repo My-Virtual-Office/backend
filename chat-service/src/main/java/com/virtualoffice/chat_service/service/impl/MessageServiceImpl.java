@@ -39,7 +39,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -213,6 +216,30 @@ public class MessageServiceImpl implements MessageService {
         message.setContent(newContent);
         message.setUpdatedAt(Instant.now());
 
+        return DtoMapper.toMessageResponse(messageRepository.save(message));
+    }
+
+    @Override
+    public MessageResponse toggleReaction(String messageId, String emoji, Integer userId) {
+        ObjectId msgId = new ObjectId(messageId);
+        Message message = messageRepository.findById(msgId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "message not found"));
+
+        Map<String, List<Integer>> reactions = message.getReactions();
+        if (reactions == null) {
+            reactions = new HashMap<>();
+        }
+        List<Integer> users = reactions.computeIfAbsent(emoji, k -> new ArrayList<>());
+        if (users.contains(userId)) {
+            users.remove(userId); // Integer -> remove(Object), not index
+            if (users.isEmpty()) {
+                reactions.remove(emoji);
+            }
+        } else {
+            users.add(userId);
+        }
+        message.setReactions(reactions);
+        message.setUpdatedAt(Instant.now());
         return DtoMapper.toMessageResponse(messageRepository.save(message));
     }
 

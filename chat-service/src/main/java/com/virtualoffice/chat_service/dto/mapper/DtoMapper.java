@@ -56,6 +56,7 @@ public class DtoMapper {
                 .threadId(toHex(message.getThreadId()))
                 .replyToId(toHex(message.getReplyToId()))
                 .mentions(message.getMentions())
+                .reactions(message.getReactions())
                 .clientMessageId(message.getClientMessageId())
                 .deleted(message.getDeleted())
                 .deletedAt(message.getDeletedAt())

@@ -24,6 +24,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
@@ -39,6 +40,7 @@ public class MessageResponse {
     private String threadId;
     private String replyToId;
     private List<Integer> mentions;
+    private Map<String, List<Integer>> reactions;
     private String clientMessageId;
     private Boolean deleted;
     private Instant deletedAt;
