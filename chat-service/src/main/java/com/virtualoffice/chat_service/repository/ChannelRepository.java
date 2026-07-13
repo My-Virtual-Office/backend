@@ -28,6 +28,7 @@ import org.springframework.data.mongodb.repository.Update;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -47,6 +48,8 @@ public interface ChannelRepository extends MongoRepository<Channel, ObjectId> {
 
     @Query("{ 'workspaceId': ?0, 'name': ?1, 'type': 'GROUP' }")
     Optional<Channel> findByWorkspaceIdAndName(Integer workspaceId, String name);
+
+    List<Channel> findByCanonicalTrue();
 
     @Query("{ 'type': ?0, 'members': ?1 }")
     Page<Channel> findDirectChannelsForUser(ChannelType type, Integer userId, Pageable pageable);
