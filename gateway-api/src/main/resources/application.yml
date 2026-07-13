@@ -31,7 +31,10 @@ jwt:
 gateway:
   # Path prefixes served without authentication (comma-separated). Any path ending in /health is
   # also public. Everything else requires a valid JWT.
-  public-path-prefixes: /api/auth/,/api/otp/
+  # /api/chat/connect is the chat WebSocket handshake: browsers can't attach an
+  # Authorization header to a WS upgrade, so it authenticates via a short-lived
+  # ?ticket= validated by chat-service's handshake interceptor (not a JWT here).
+  public-path-prefixes: /api/auth/,/api/otp/,/api/chat/connect
   cors:
     # Browser origins allowed to call the API (comma-separated patterns). Defaults to any localhost
     # port for local dev; set to the real web origin(s) in production.
