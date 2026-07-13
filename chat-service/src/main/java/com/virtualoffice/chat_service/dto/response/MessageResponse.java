@@ -44,6 +44,9 @@ public class MessageResponse {
     private List<Integer> mentions;
     private Map<String, List<Integer>> reactions;
     private List<Attachment> attachments;
+    private Boolean pinned;
+    private Integer pinnedBy;
+    private Instant pinnedAt;
     private String clientMessageId;
     private Boolean deleted;
     private Instant deletedAt;

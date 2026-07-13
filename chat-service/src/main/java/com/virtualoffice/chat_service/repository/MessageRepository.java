@@ -31,6 +31,9 @@ import java.util.Optional;
 @Repository
 public interface MessageRepository extends MongoRepository<Message, ObjectId> {
 
+    @Query("{ 'channelId': ?0, 'pinned': true, 'deleted': false }")
+    List<Message> findPinnedByChannel(ObjectId channelId);
+
     @Query("{ 'channelId': ?0, 'threadId': null }")
     Page<Message> findChannelMessages(ObjectId channelId, Pageable pageable);
 

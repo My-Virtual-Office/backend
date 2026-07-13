@@ -67,6 +67,11 @@ public class Message {
 
     private List<Attachment> attachments;
 
+    @Builder.Default
+    private Boolean pinned = false;
+    private Integer pinnedBy;
+    private Instant pinnedAt;
+
     private String clientMessageId;
 
     @Builder.Default

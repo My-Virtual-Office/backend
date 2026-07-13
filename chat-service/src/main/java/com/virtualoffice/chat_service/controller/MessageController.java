@@ -35,6 +35,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
+
 import java.util.Map;
 
 @RestController
@@ -108,6 +110,31 @@ public class MessageController {
         broadcastMessageEvent(WebSocketEvent.REACTION, response);
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/messages/{id}/pin")
+    public ResponseEntity<MessageResponse> pin(@PathVariable String id, HttpServletRequest httpRequest) {
+        UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+        MessageResponse response = messageService.setPinned(id, true, user.getUserId());
+        broadcastMessageEvent(WebSocketEvent.PIN, response);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/messages/{id}/pin")
+    public ResponseEntity<MessageResponse> unpin(@PathVariable String id, HttpServletRequest httpRequest) {
+        UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+        MessageResponse response = messageService.setPinned(id, false, user.getUserId());
+        broadcastMessageEvent(WebSocketEvent.PIN, response);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/channels/{id}/pins")
+    public ResponseEntity<List<MessageResponse>> pins(@PathVariable String id, HttpServletRequest httpRequest) {
+        UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+        if (!channelService.isMember(id, user.getUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not a member of this channel");
+        }
+        return ResponseEntity.ok(messageService.getPinnedMessages(id));
     }
 
     @DeleteMapping("/messages/{id}")

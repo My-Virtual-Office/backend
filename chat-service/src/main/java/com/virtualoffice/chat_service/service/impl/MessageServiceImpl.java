@@ -245,6 +245,34 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
+    public MessageResponse setPinned(String messageId, boolean pinned, Integer userId) {
+        ObjectId msgId = new ObjectId(messageId);
+        Message message = messageRepository.findById(msgId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "message not found"));
+        message.setPinned(pinned);
+        message.setPinnedBy(pinned ? userId : null);
+        message.setPinnedAt(pinned ? Instant.now() : null);
+        message.setUpdatedAt(Instant.now());
+        return DtoMapper.toMessageResponse(messageRepository.save(message));
+    }
+
+    @Override
+    public List<MessageResponse> getPinnedMessages(String channelId) {
+        ObjectId chId = new ObjectId(channelId);
+        return messageRepository.findPinnedByChannel(chId).stream()
+                .sorted((a, b) -> {
+                    Instant pa = a.getPinnedAt();
+                    Instant pb = b.getPinnedAt();
+                    if (pa == null && pb == null) return 0;
+                    if (pa == null) return 1;
+                    if (pb == null) return -1;
+                    return pb.compareTo(pa); // newest pin first
+                })
+                .map(DtoMapper::toMessageResponse)
+                .toList();
+    }
+
+    @Override
     public MessageResponse deleteMessage(String messageId, Integer requestingUserId, String requestingUserRole) {
         ObjectId msgId = new ObjectId(messageId);
         Message message = messageRepository.findById(msgId)
