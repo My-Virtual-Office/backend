@@ -1,0 +1,8 @@
+# Build context hygiene for the parameterized backend image.
+**/target
+**/.git
+**/.idea
+**/*.iml
+**/*.log
+dev/data
+**/data
