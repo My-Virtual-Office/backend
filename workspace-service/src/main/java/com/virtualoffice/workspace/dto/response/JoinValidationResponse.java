@@ -18,10 +18,11 @@
 package com.virtualoffice.workspace.dto.response;
 
 import com.virtualoffice.workspace.model.enums.AvatarCharacter;
+import com.virtualoffice.workspace.model.enums.DeskStatus;
 import com.virtualoffice.workspace.model.enums.WorkspaceRole;
 
 // Returned to the forked Colyseus server on join so it can map sessionId -> userId and
-// initialize the Player (name, spawn position, avatar) from the desk.
+// initialize the Player (name, spawn position, avatar, presence status) from the desk.
 public record JoinValidationResponse(
         Long userId,
         Long workspaceId,
@@ -31,5 +32,8 @@ public record JoinValidationResponse(
         Integer spawnX,
         Integer spawnY,
         WorkspaceRole role,
+        DeskStatus status,
+        String statusEmoji,
+        String statusCustomText,
         boolean allowed) {
 }

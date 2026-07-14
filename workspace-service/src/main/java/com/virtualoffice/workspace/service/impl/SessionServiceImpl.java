@@ -91,7 +91,8 @@ public class SessionServiceImpl implements SessionService {
     public JoinValidationResponse validateJoin(Long workspaceId, Long userId) {
         Desk desk = activeDeskOrThrow(workspaceId, userId);
         return new JoinValidationResponse(userId, workspaceId, desk.getId(), desk.getFullName(),
-                desk.getAvatarCharacter(), desk.getPositionX(), desk.getPositionY(), desk.getRole(), true);
+                desk.getAvatarCharacter(), desk.getPositionX(), desk.getPositionY(), desk.getRole(),
+                desk.getStatus(), desk.getStatusEmoji(), desk.getStatusCustomText(), true);
     }
 
     @Override
