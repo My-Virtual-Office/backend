@@ -3,6 +3,7 @@ package com.virtualoffice.service.user.controller;
 import com.virtualoffice.service.user.domain.enumuration.VerificationRequestType;
 import com.virtualoffice.service.user.dto.ApiResponse;
 import com.virtualoffice.service.user.dto.OtpRequest;
+import com.virtualoffice.service.user.dto.ResetPasswordRequest;
 import com.virtualoffice.service.user.dto.VerifyOtpRequest;
 import com.virtualoffice.service.user.service.OtpService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,17 @@ public class OtpController {
                 request.getEmail(),
                 request.getOtp(),
                 VerificationRequestType.PASSWORD_RESET
+        );
+        return ResponseEntity.ok(result);
+    }
+
+    // Finish the forgot-password flow: re-checks the emailed OTP and sets the new password.
+    @PostMapping("/reset")
+    public ResponseEntity<ApiResponse> resetPassword(@RequestBody ResetPasswordRequest request) {
+        ApiResponse result = otpService.resetPassword(
+                request.getEmail(),
+                request.getOtp(),
+                request.getNewPassword()
         );
         return ResponseEntity.ok(result);
     }
