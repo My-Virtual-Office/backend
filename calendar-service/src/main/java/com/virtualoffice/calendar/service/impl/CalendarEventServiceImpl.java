@@ -36,9 +36,12 @@ import java.util.Optional;
 public class CalendarEventServiceImpl implements CalendarEventService {
 
     private final CalendarEventRepository repository;
+    private final com.virtualoffice.calendar.client.WorkspaceStatusClient workspaceClient;
 
-    public CalendarEventServiceImpl(CalendarEventRepository repository) {
+    public CalendarEventServiceImpl(CalendarEventRepository repository,
+                                    com.virtualoffice.calendar.client.WorkspaceStatusClient workspaceClient) {
         this.repository = repository;
+        this.workspaceClient = workspaceClient;
     }
 
     @Override
@@ -76,10 +79,11 @@ public class CalendarEventServiceImpl implements CalendarEventService {
         if (!from.isBefore(to)) {
             throw new IllegalArgumentException("'from' must be before 'to'");
         }
-        // Overlap semantics: an event is in range if it starts before `to` and ends after `from`.
+        // Shared team calendar: return every event in the workspace overlapping the window
+        // (an event is in range if it starts before `to` and ends after `from`).
         return repository
-                .findByUserIdAndWorkspaceIdAndStartTimeLessThanAndEndTimeGreaterThanOrderByStartTimeAsc(
-                        userId, workspaceId, to, from)
+                .findByWorkspaceIdAndStartTimeLessThanAndEndTimeGreaterThanOrderByStartTimeAsc(
+                        workspaceId, to, from)
                 .stream().map(EventResponse::from).toList();
     }
 
@@ -92,7 +96,7 @@ public class CalendarEventServiceImpl implements CalendarEventService {
     @Override
     public EventResponse update(Long userId, Long id, UpdateEventRequest request) {
         requireValidWindow(request.startTime(), request.endTime());
-        CalendarEvent event = requireOwn(userId, id);
+        CalendarEvent event = requireEditable(userId, id);
         event.setTitle(request.title());
         event.setDescription(request.description());
         event.setStartTime(request.startTime());
@@ -106,7 +110,7 @@ public class CalendarEventServiceImpl implements CalendarEventService {
 
     @Override
     public void delete(Long userId, Long id) {
-        repository.delete(requireOwn(userId, id));
+        repository.delete(requireEditable(userId, id));
     }
 
     @Override
@@ -124,6 +128,16 @@ public class CalendarEventServiceImpl implements CalendarEventService {
     private CalendarEvent requireOwn(Long userId, Long id) {
         return repository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("event not found: " + id));
+    }
+
+    // Editable by the event's author OR a workspace admin/owner (server-to-server role check).
+    private CalendarEvent requireEditable(Long callerId, Long id) {
+        CalendarEvent event = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("event not found: " + id));
+        if (event.getUserId().equals(callerId)) return event;
+        if (workspaceClient.isAdmin(event.getWorkspaceId(), callerId)) return event;
+        throw new com.virtualoffice.calendar.exception.ForbiddenException(
+                "only the event owner or a workspace admin can modify this event");
     }
 
     private void requireValidWindow(Instant start, Instant end) {

@@ -33,6 +33,10 @@ public interface CalendarEventRepository extends JpaRepository<CalendarEvent, Lo
     List<CalendarEvent> findByUserIdAndWorkspaceIdAndStartTimeLessThanAndEndTimeGreaterThanOrderByStartTimeAsc(
             Long userId, Long workspaceId, Instant to, Instant from);
 
+    // Every event in a workspace overlapping the window (shared, team-wide calendar).
+    List<CalendarEvent> findByWorkspaceIdAndStartTimeLessThanAndEndTimeGreaterThanOrderByStartTimeAsc(
+            Long workspaceId, Instant to, Instant from);
+
     // A caller's currently-active events (start <= now < end); newest-starting first so callers can take(0).
     List<CalendarEvent> findByUserIdAndWorkspaceIdAndStartTimeLessThanEqualAndEndTimeGreaterThanOrderByStartTimeDesc(
             Long userId, Long workspaceId, Instant nowForStart, Instant nowForEnd);

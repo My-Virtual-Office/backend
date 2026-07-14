@@ -91,7 +91,22 @@ public class WorkspaceStatusClient {
         }
     }
 
+    /** True if the user is a workspace ADMIN or OWNER (for author-or-admin event edits). */
+    public boolean isAdmin(long workspaceId, long userId) {
+        try {
+            JoinValidationView v = rest.get()
+                    .uri("/api/internal/workspace/{ws}/join-validation/{uid}", workspaceId, userId)
+                    .retrieve()
+                    .body(JoinValidationView.class);
+            String role = v != null ? v.role() : null;
+            return "ADMIN".equalsIgnoreCase(role) || "OWNER".equalsIgnoreCase(role);
+        } catch (Exception e) {
+            log.warn("could not read role for user {} in ws {}: {}", userId, workspaceId, e.getMessage());
+            return false;
+        }
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private record JoinValidationView(String statusCustomText) {
+    private record JoinValidationView(String statusCustomText, String role) {
     }
 }
