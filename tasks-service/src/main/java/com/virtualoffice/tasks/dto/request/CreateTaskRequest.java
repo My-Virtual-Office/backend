@@ -12,6 +12,8 @@ import java.time.Instant;
  */
 public record CreateTaskRequest(
         @NotNull Long workspaceId,
+        // The Team Space to create the task in. Null falls back to the workspace's default space.
+        Long spaceId,
         @NotBlank @Size(max = 500) String title,
         @Size(max = 8000) String description,
         String status,

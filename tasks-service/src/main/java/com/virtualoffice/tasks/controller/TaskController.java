@@ -42,12 +42,13 @@ public class TaskController {
 
     @GetMapping
     public List<TaskResponse> list(@RequestParam Long workspaceId,
+                                   @RequestParam(required = false) Long spaceId,
                                    @RequestParam(required = false) Long assigneeUserId,
                                    @RequestParam(required = false) String status,
                                    @RequestParam(required = false) String q,
                                    HttpServletRequest http) {
-        UserContext.fromRequest(http); // require an authenticated caller
-        return service.list(workspaceId, assigneeUserId, status, q);
+        Long callerId = UserContext.fromRequest(http).getUserId();
+        return service.list(callerId, workspaceId, spaceId, assigneeUserId, status, q);
     }
 
     // Literal paths ("/mine", "/by-number/...") win over the "/{id}" template regardless of order.

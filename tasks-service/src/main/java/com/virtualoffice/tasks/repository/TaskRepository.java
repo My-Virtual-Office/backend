@@ -21,16 +21,23 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("select coalesce(max(t.taskNumber), 0) from Task t where t.workspaceId = :workspaceId")
     long findMaxTaskNumber(@Param("workspaceId") Long workspaceId);
 
-    // List with optional assignee/status filters (both null-safe; the parameter type is inferred
-    // from its typed column, so a null bind is fine here).
+    // Space-scoped counting/cleanup.
+    long countBySpaceId(Long spaceId);
+
+    void deleteBySpaceId(Long spaceId);
+
+    // List with optional space/assignee/status filters (all null-safe; each parameter type is
+    // inferred from its typed column, so a null bind is fine here).
     @Query("""
             select t from Task t
             where t.workspaceId = :workspaceId
+              and (:spaceId is null or t.spaceId = :spaceId)
               and (:assigneeUserId is null or t.assigneeUserId = :assigneeUserId)
               and (:status is null or t.status = :status)
             order by t.taskNumber desc
             """)
     List<Task> filter(@Param("workspaceId") Long workspaceId,
+                      @Param("spaceId") Long spaceId,
                       @Param("assigneeUserId") Long assigneeUserId,
                       @Param("status") String status);
 
@@ -40,6 +47,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("""
             select t from Task t
             where t.workspaceId = :workspaceId
+              and (:spaceId is null or t.spaceId = :spaceId)
               and (:assigneeUserId is null or t.assigneeUserId = :assigneeUserId)
               and (:status is null or t.status = :status)
               and (lower(t.title) like lower(concat('%', :q, '%'))
@@ -47,6 +55,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             order by t.taskNumber desc
             """)
     List<Task> search(@Param("workspaceId") Long workspaceId,
+                      @Param("spaceId") Long spaceId,
                       @Param("assigneeUserId") Long assigneeUserId,
                       @Param("status") String status,
                       @Param("q") String q);

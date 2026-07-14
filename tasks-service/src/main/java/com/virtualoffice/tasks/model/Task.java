@@ -42,6 +42,10 @@ public class Task {
     @Column(nullable = false)
     private Long workspaceId;
 
+    // The Team Space this task belongs to (tasks are scoped per space).
+    @Column(nullable = false)
+    private Long spaceId;
+
     @Column(nullable = false)
     private String title;
 

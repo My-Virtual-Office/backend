@@ -8,8 +8,10 @@ import com.virtualoffice.tasks.messaging.NotificationPublisher;
 import com.virtualoffice.tasks.messaging.NotificationType;
 import com.virtualoffice.tasks.model.Task;
 import com.virtualoffice.tasks.model.TaskPriority;
+import com.virtualoffice.tasks.model.TaskSpace;
 import com.virtualoffice.tasks.model.TaskStatus;
 import com.virtualoffice.tasks.repository.TaskRepository;
+import com.virtualoffice.tasks.service.SpaceService;
 import com.virtualoffice.tasks.service.TaskService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,13 +28,19 @@ public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository repository;
     private final NotificationPublisher publisher;
+    private final SpaceService spaceService;
 
     @Override
     public TaskResponse create(Long callerId, String callerEmail, CreateTaskRequest req) {
-        long nextNumber = repository.findMaxTaskNumber(req.workspaceId()) + 1;
+        // Resolve (and access-check) the space; a null spaceId falls back to the workspace default.
+        TaskSpace space = (req.spaceId() != null)
+                ? spaceService.requireAccessibleSpace(callerId, req.spaceId())
+                : spaceService.ensureDefault(callerId, req.workspaceId());
+        long nextNumber = repository.findMaxTaskNumber(space.getWorkspaceId()) + 1;
         Task task = Task.builder()
                 .taskNumber(nextNumber)
-                .workspaceId(req.workspaceId())
+                .workspaceId(space.getWorkspaceId())
+                .spaceId(space.getId())
                 .title(req.title())
                 .description(req.description())
                 .status(normalizeStatus(req.status()))
@@ -51,12 +59,17 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<TaskResponse> list(Long workspaceId, Long assigneeUserId, String status, String q) {
+    public List<TaskResponse> list(Long callerId, Long workspaceId, Long spaceId,
+                                   Long assigneeUserId, String status, String q) {
+        // If a space is named, enforce membership; task rows are then filtered to it.
+        if (spaceId != null) {
+            spaceService.requireAccessibleSpace(callerId, spaceId);
+        }
         String normStatus = (status == null || status.isBlank()) ? null : normalizeStatus(status);
         String normQ = (q == null || q.isBlank()) ? null : q.trim();
         List<Task> results = (normQ == null)
-                ? repository.filter(workspaceId, assigneeUserId, normStatus)
-                : repository.search(workspaceId, assigneeUserId, normStatus, normQ);
+                ? repository.filter(workspaceId, spaceId, assigneeUserId, normStatus)
+                : repository.search(workspaceId, spaceId, assigneeUserId, normStatus, normQ);
         return results.stream().map(TaskResponse::from).toList();
     }
 

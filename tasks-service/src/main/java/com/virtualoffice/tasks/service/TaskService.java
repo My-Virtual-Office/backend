@@ -11,7 +11,8 @@ public interface TaskService {
 
     TaskResponse create(Long callerId, String callerEmail, CreateTaskRequest request);
 
-    List<TaskResponse> list(Long workspaceId, Long assigneeUserId, String status, String q);
+    List<TaskResponse> list(Long callerId, Long workspaceId, Long spaceId,
+                            Long assigneeUserId, String status, String q);
 
     List<TaskResponse> mine(Long callerId, Long workspaceId);
 
