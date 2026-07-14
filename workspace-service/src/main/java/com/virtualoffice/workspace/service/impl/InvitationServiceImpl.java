@@ -53,17 +53,26 @@ public class InvitationServiceImpl implements InvitationService {
     private final WorkspaceAccessGuard accessGuard;
     private final InvitationMapper mapper;
     private final WorkspaceChannelEventPublisher channelEvents;
+    private final com.virtualoffice.workspace.repository.WorkspaceRepository workspaceRepository;
+    private final com.virtualoffice.workspace.messaging.NotificationPublisher notifications;
+    private final String appUrl;
 
     public InvitationServiceImpl(InvitationRepository invitationRepository,
                                  DeskRepository deskRepository,
                                  WorkspaceAccessGuard accessGuard,
                                  InvitationMapper mapper,
-                                 WorkspaceChannelEventPublisher channelEvents) {
+                                 WorkspaceChannelEventPublisher channelEvents,
+                                 com.virtualoffice.workspace.repository.WorkspaceRepository workspaceRepository,
+                                 com.virtualoffice.workspace.messaging.NotificationPublisher notifications,
+                                 @org.springframework.beans.factory.annotation.Value("${app.url:http://localhost:3001}") String appUrl) {
         this.invitationRepository = invitationRepository;
         this.deskRepository = deskRepository;
         this.accessGuard = accessGuard;
         this.mapper = mapper;
         this.channelEvents = channelEvents;
+        this.workspaceRepository = workspaceRepository;
+        this.notifications = notifications;
+        this.appUrl = appUrl;
     }
 
     @Override
@@ -88,8 +97,19 @@ public class InvitationServiceImpl implements InvitationService {
                 .expiresAt(Instant.now().plus(INVITE_TTL))
                 .build());
 
-        // notifications-service publishes the invite email off a RabbitMQ event (see INTEGRATION.md);
-        // wiring the broker is tracked separately so this milestone stays broker-free.
+        // Send the invitation email via notifications-service (RabbitMQ WORKSPACE_INVITE event).
+        String workspaceName = workspaceRepository.findById(workspaceId)
+                .map(com.virtualoffice.workspace.model.Workspace::getName)
+                .orElse("a workspace");
+        java.util.Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("email", invitation.getInvitedEmail());
+        payload.put("workspaceName", workspaceName);
+        payload.put("inviterName", "A teammate");
+        payload.put("role", invitation.getRole().name());
+        payload.put("inviteLink", appUrl + "/onboarding?token=" + invitation.getToken());
+        notifications.publish(
+                com.virtualoffice.workspace.messaging.NotificationType.WORKSPACE_INVITE, payload);
+
         return mapper.toResponse(invitation);
     }
 

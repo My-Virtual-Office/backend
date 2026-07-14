@@ -48,3 +48,13 @@ workspace:
     exchange: ${WORKSPACE_EXCHANGE:workspace.exchange}
     channel:
       routing-key: ${WORKSPACE_CHANNEL_ROUTING_KEY:workspace.channel.event}
+
+# Notifications exchange (invite emails) — consumed by notifications-service.
+notifications:
+  exchange: ${NOTIFICATIONS_EXCHANGE:notifications.exchange}
+  routing:
+    key: ${NOTIFICATIONS_ROUTING_KEY:routing.key}
+
+# Base URL used to build invite links in emails.
+app:
+  url: ${APP_URL:http://localhost:3001}
