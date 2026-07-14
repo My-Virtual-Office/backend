@@ -1,0 +1,55 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: tasks-service
+  datasource:
+    # Reuses the shared Postgres instance; tasks owns its own `tasks` schema (below),
+    # so it never collides with the other services' tables/flyway history in the same database.
+    url: ${TASKS_DB_URL:jdbc:postgresql://localhost:5432/workspace}
+    username: ${TASKS_DB_USER:workspace}
+    password: ${TASKS_DB_PASSWORD:workspace}
+  jpa:
+    hibernate:
+      # Flyway owns the schema; Hibernate only validates the mapping against it.
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: tasks
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    # Isolate tasks' tables + flyway_schema_history in a dedicated schema in the shared DB.
+    schemas: tasks
+    default-schema: tasks
+    create-schemas: true
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
+# Where task notifications are published (consumed by notifications-service).
+notifications:
+  exchange: ${NOTIFICATIONS_EXCHANGE:notifications.exchange}
+  routing:
+    key: ${NOTIFICATIONS_ROUTING_KEY:routing.key}
+
+app:
+  url: ${APP_URL:http://localhost:3001}
+
+# Due-soon reminder scan cadence.
+tasks:
+  reminder:
+    interval-ms: ${TASKS_REMINDER_INTERVAL_MS:60000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized

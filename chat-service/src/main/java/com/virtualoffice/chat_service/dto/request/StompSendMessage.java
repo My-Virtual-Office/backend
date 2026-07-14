@@ -17,6 +17,7 @@
  */
 package com.virtualoffice.chat_service.dto.request;
 
+import com.virtualoffice.chat_service.model.Attachment;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -35,5 +36,6 @@ public class StompSendMessage {
     private String threadId;
     private String replyToId;
     private List<Integer> mentions;
+    private List<Attachment> attachments;
     private String clientMessageId;
 }

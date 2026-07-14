@@ -14,7 +14,7 @@ spring:
         - id: workspace-service
           uri: ${WORKSPACE_SERVICE_URL:http://localhost:8087}
           predicates:
-            - Path=/api/workspace/**
+            - Path=/api/workspace/**,/api/invitations/**
         - id: chat-service
           uri: ${CHAT_SERVICE_URL:http://localhost:8084}
           predicates:
@@ -23,6 +23,18 @@ spring:
           uri: ${ROOM_SERVICE_URL:http://localhost:8086}
           predicates:
             - Path=/api/rooms/**
+        - id: calendar-service
+          uri: ${CALENDAR_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/calendar/**
+        - id: tasks-service
+          uri: ${TASKS_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/api/tasks/**
+        - id: notifications-service
+          uri: ${NOTIFICATIONS_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/notifications/**
 
 # Shared signing secret with user-service; the gateway validates every token at the edge.
 jwt:
@@ -31,7 +43,10 @@ jwt:
 gateway:
   # Path prefixes served without authentication (comma-separated). Any path ending in /health is
   # also public. Everything else requires a valid JWT.
-  public-path-prefixes: /api/auth/,/api/otp/
+  # /api/chat/connect is the chat WebSocket handshake: browsers can't attach an
+  # Authorization header to a WS upgrade, so it authenticates via a short-lived
+  # ?ticket= validated by chat-service's handshake interceptor (not a JWT here).
+  public-path-prefixes: /api/auth/,/api/otp/,/api/chat/connect,/api/chat/files/,/api/notifications/connect
   cors:
     # Browser origins allowed to call the API (comma-separated patterns). Defaults to any localhost
     # port for local dev; set to the real web origin(s) in production.

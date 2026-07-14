@@ -19,6 +19,7 @@ package com.virtualoffice.workspace.service.impl;
 
 import com.virtualoffice.workspace.dto.mapper.DeskMapper;
 import com.virtualoffice.workspace.dto.request.UpdateDeskRequest;
+import com.virtualoffice.workspace.dto.request.UpdateMembershipRequest;
 import com.virtualoffice.workspace.dto.request.UpdateStatusRequest;
 import com.virtualoffice.workspace.messaging.WorkspaceChannelEventPublisher;
 import com.virtualoffice.workspace.dto.response.DeskResponse;
@@ -116,6 +117,16 @@ public class DeskServiceImpl implements DeskService {
     }
 
     @Override
+    public DeskResponse updatePosition(Long workspaceId, Long deskId,
+                                       com.virtualoffice.workspace.dto.request.UpdatePositionRequest request,
+                                       Long requesterId) {
+        Desk desk = requireOwnDesk(workspaceId, deskId, requesterId);
+        desk.setPositionX(request.positionX());
+        desk.setPositionY(request.positionY());
+        return full(deskRepository.save(desk));
+    }
+
+    @Override
     public void removeMember(Long workspaceId, Long deskId, Long requesterId) {
         accessGuard.requireRole(workspaceId, requesterId, WorkspaceRole.ADMIN);
         Desk desk = findOrThrow(workspaceId, deskId);
@@ -126,6 +137,32 @@ public class DeskServiceImpl implements DeskService {
         deskRepository.save(desk);
         // Drop the removed member from the workspace chat channel (chat-service, post-commit).
         channelEvents.memberRemoved(workspaceId, desk.getUserId());
+    }
+
+    @Override
+    public DeskResponse updateMembership(Long workspaceId, Long deskId,
+                                         UpdateMembershipRequest request, Long requesterId) {
+        accessGuard.requireRole(workspaceId, requesterId, WorkspaceRole.ADMIN);
+        Desk desk = findOrThrow(workspaceId, deskId);
+        if (request.role() != null) {
+            if (desk.getRole() == WorkspaceRole.OWNER) {
+                throw new ConflictException("the workspace owner's role cannot be changed");
+            }
+            if (request.role() == WorkspaceRole.OWNER) {
+                // Prevent a second OWNER; ownership transfer is a separate deliberate flow.
+                throw new ConflictException("cannot grant OWNER; use ownership transfer instead");
+            }
+            desk.setRole(request.role());
+        }
+        if (request.title() != null) {
+            desk.setTitle(request.title());
+        }
+        if (request.teamId() != null) {
+            // 0 is the sentinel for "unassign from any team".
+            desk.setTeamId(request.teamId() == 0L ? null : request.teamId());
+        }
+        deskRepository.save(desk);
+        return full(desk);
     }
 
     // --- helpers ---

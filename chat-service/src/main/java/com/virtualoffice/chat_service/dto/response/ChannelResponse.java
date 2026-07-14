@@ -36,6 +36,10 @@ public class ChannelResponse {
     private String type;
     private Integer workspaceId;
     private List<Integer> members;
+    private String description;
+    private String visibility;
+    private List<Long> allowedTeamIds;
+    private List<Integer> moderatorIds;
     private Integer createdBy;
     private Instant createdAt;
     private Instant updatedAt;

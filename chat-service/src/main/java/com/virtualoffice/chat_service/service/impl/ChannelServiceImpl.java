@@ -73,6 +73,10 @@ public class ChannelServiceImpl implements ChannelService {
                 .type(ChannelType.GROUP)
                 .workspaceId(request.getWorkspaceId())
                 .members(members)
+                .description(request.getDescription())
+                .visibility(request.getVisibility() != null ? request.getVisibility() : "PUBLIC")
+                .allowedTeamIds(request.getAllowedTeamIds())
+                .moderatorIds(request.getModeratorIds())
                 .createdBy(creatorUserId)
                 .createdAt(now)
                 .updatedAt(now)
@@ -127,6 +131,36 @@ public class ChannelServiceImpl implements ChannelService {
         Channel channel = channelRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "channel not found"));
         return DtoMapper.toChannelResponse(channel);
+    }
+
+    @Override
+    public ChannelResponse updateChannel(String channelId,
+                                         com.virtualoffice.chat_service.dto.request.UpdateChannelRequest request,
+                                         Integer userId) {
+        ObjectId id = new ObjectId(channelId);
+        Channel channel = channelRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "channel not found"));
+
+        boolean isCreator = userId.equals(channel.getCreatedBy());
+        boolean isModerator = channel.getModeratorIds() != null && channel.getModeratorIds().contains(userId);
+        if (!isCreator && !isModerator) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "only the channel creator or a moderator can edit this channel");
+        }
+
+        if (request.getName() != null) channel.setName(request.getName());
+        if (request.getDescription() != null) channel.setDescription(request.getDescription());
+        if (request.getVisibility() != null) channel.setVisibility(request.getVisibility());
+        if (request.getAllowedTeamIds() != null) channel.setAllowedTeamIds(request.getAllowedTeamIds());
+        if (request.getModeratorIds() != null) channel.setModeratorIds(request.getModeratorIds());
+        if (request.getMembers() != null) {
+            LinkedHashSet<Integer> m = new LinkedHashSet<>(request.getMembers());
+            m.removeIf(Objects::isNull);
+            m.add(channel.getCreatedBy()); // creator always remains a member
+            channel.setMembers(new ArrayList<>(m));
+        }
+        channel.setUpdatedAt(Instant.now());
+        return DtoMapper.toChannelResponse(channelRepository.save(channel));
     }
 
     @Override

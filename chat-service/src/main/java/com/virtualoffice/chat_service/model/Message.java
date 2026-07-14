@@ -29,6 +29,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
@@ -60,6 +61,16 @@ public class Message {
     private ObjectId replyToId;
 
     private List<Integer> mentions;
+
+    // emoji -> userIds who reacted with it
+    private Map<String, List<Integer>> reactions;
+
+    private List<Attachment> attachments;
+
+    @Builder.Default
+    private Boolean pinned = false;
+    private Integer pinnedBy;
+    private Instant pinnedAt;
 
     private String clientMessageId;
 

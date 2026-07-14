@@ -22,8 +22,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import com.virtualoffice.chat_service.model.Attachment;
+
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
@@ -39,6 +42,11 @@ public class MessageResponse {
     private String threadId;
     private String replyToId;
     private List<Integer> mentions;
+    private Map<String, List<Integer>> reactions;
+    private List<Attachment> attachments;
+    private Boolean pinned;
+    private Integer pinnedBy;
+    private Instant pinnedAt;
     private String clientMessageId;
     private Boolean deleted;
     private Instant deletedAt;

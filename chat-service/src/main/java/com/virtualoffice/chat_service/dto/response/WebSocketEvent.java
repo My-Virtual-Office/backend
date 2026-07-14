@@ -37,6 +37,8 @@ public class WebSocketEvent<T> {
     public static final String DELETE_MESSAGE = "DELETE_MESSAGE";
     public static final String TYPING = "TYPING";
     public static final String THREAD_DELETED = "THREAD_DELETED";
+    public static final String REACTION = "REACTION";
+    public static final String PIN = "PIN";
 
     public static <T> WebSocketEvent<T> of(String action, T payload) {
         return WebSocketEvent.<T>builder()

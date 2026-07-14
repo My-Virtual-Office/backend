@@ -67,6 +67,42 @@ public class OtpService {
         return new ApiResponse("OTP verified");
     }
 
+    // Complete a forgotten-password flow: re-validate the emailed OTP, then set the new password.
+    // Kept as a single call so a password can only be changed by someone holding the fresh OTP.
+    public ApiResponse resetPassword(String email, String plainOtpFromUser, String newPassword) {
+        if (newPassword == null || newPassword.length() < 6) {
+            return new ApiResponse("Password must be at least 6 characters");
+        }
+
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            return new ApiResponse("User not found");
+        }
+
+        VerificationRequest request = verificationRequestRepository
+                .getOtpByUserAndType(user.getId(), VerificationRequestType.PASSWORD_RESET,
+                        VerificationRequestStatus.PENDING)
+                .orElse(null);
+        if (request == null) {
+            return new ApiResponse("No Pending OTP found");
+        }
+        if (request.getExpiresAt().isBefore(LocalDateTime.now())) {
+            return new ApiResponse("OTP expired");
+        }
+        if (!passwordEncoder.matches(plainOtpFromUser, request.getOtp())) {
+            return new ApiResponse("Invalid OTP");
+        }
+
+        // OTP checks out — set the new (hashed) password and consume the request.
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        request.setStatus(VerificationRequestStatus.APPROVED);
+        verificationRequestRepository.save(request);
+
+        return new ApiResponse("Password reset");
+    }
+
     public void generateAndSendOtp(User user, VerificationRequestType type) {
 
         // get a random OTP

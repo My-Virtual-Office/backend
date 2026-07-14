@@ -43,4 +43,14 @@ public class CreateChannelRequest {
 
     @NotEmpty(message = "at least one member is required")
     private List<Integer> members;
+
+    // Access control (all optional; sensible defaults applied server-side).
+    @Size(max = 500)
+    private String description;
+
+    private String visibility; // "PUBLIC" | "PRIVATE"
+
+    private List<Long> allowedTeamIds;
+
+    private List<Integer> moderatorIds;
 }

@@ -2,6 +2,11 @@ spring:
   application:
     name: chat-service
 
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 25MB
+
   data:
     mongodb:
       uri: mongodb://root:rootpassword@localhost:27017/chat_service?authSource=admin

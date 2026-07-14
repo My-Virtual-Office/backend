@@ -49,6 +49,7 @@ public class AuthGatewayFilter implements GlobalFilter, Ordered {
 
     static final String USER_ID = "X-User-Id";
     static final String USER_ROLE = "X-User-Role";
+    static final String USER_EMAIL = "X-User-Email";
     // No platform-level (USER/ADMIN) role is modelled yet; default everyone to USER. Workspace-scoped
     // roles are resolved separately by each service via workspace-service.
     static final String DEFAULT_ROLE = "USER";
@@ -73,6 +74,7 @@ public class AuthGatewayFilter implements GlobalFilter, Ordered {
                 .headers(h -> {
                     h.remove(USER_ID);
                     h.remove(USER_ROLE);
+                    h.remove(USER_EMAIL);
                 })
                 .build();
 
@@ -96,10 +98,12 @@ public class AuthGatewayFilter implements GlobalFilter, Ordered {
             return deny(exchange, HttpStatus.UNAUTHORIZED);
         }
 
+        String email = jwtService.verifyAndExtractEmail(token).orElse("");
         ServerHttpRequest authed = stripped.mutate()
                 .headers(h -> {
                     h.set(USER_ID, String.valueOf(userId.get()));
                     h.set(USER_ROLE, DEFAULT_ROLE);
+                    if (!email.isBlank()) h.set(USER_EMAIL, email);
                 })
                 .build();
         return chain.filter(exchange.mutate().request(authed).build());

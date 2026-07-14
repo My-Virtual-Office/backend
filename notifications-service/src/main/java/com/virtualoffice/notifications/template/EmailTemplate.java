@@ -26,7 +26,9 @@ public enum EmailTemplate {
     SIGNUP_SUCCESS        ("signup-success.html",         "Welcome to Virtual Office"),
     LOGIN_SUCCESS         ("login-success.html",          "New sign-in to your Virtual Office account"),
     OTP                   ("otp.html",                    "Your Virtual Office verification code"),
-    PASSWORD_RESET_SUCCESS("password-reset-success.html", "Your Virtual Office password was changed");
+    PASSWORD_RESET_SUCCESS("password-reset-success.html", "Your Virtual Office password was changed"),
+    MEETING_REMINDER      ("meeting-reminder.html",       "Reminder: your meeting is starting soon"),
+    WORKSPACE_INVITE      ("workspace-invite.html",       "You're invited to a Virtual Office workspace");
 
     private final String templateName;
     private final String templateSubject;
@@ -42,8 +44,14 @@ public enum EmailTemplate {
             case LOGIN_SUCCESS          -> LOGIN_SUCCESS;
             case OTP                    -> OTP;
             case PASSWORD_RESET_SUCCESS -> PASSWORD_RESET_SUCCESS;
+            case MEETING_REMINDER       -> MEETING_REMINDER;
+            case WORKSPACE_INVITE       -> WORKSPACE_INVITE;
             case TASK_ASSIGNED          -> throw new IllegalArgumentException(
                     "TASK_ASSIGNED is not an email type");
+            case TASK_REMINDER          -> throw new IllegalArgumentException(
+                    "TASK_REMINDER is not an email type");
+            case MENTION                -> throw new IllegalArgumentException(
+                    "MENTION is not an email type");
         };
     }
 }

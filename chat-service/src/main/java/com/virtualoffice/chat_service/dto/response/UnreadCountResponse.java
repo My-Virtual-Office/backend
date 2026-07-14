@@ -30,4 +30,5 @@ public class UnreadCountResponse {
 
     private long unreadCount;
     private String lastReadMessageId;
+    private boolean mentioned;
 }

@@ -59,8 +59,10 @@ public class ChatStompController {
             return;
         }
 
-        if (payload.getChannelId() == null || payload.getContent() == null || payload.getContent().isBlank()) {
-            sendErrorToUser(headerAccessor, "INVALID_PAYLOAD", "channelId and content are required");
+        boolean hasContent = payload.getContent() != null && !payload.getContent().isBlank();
+        boolean hasAttachments = payload.getAttachments() != null && !payload.getAttachments().isEmpty();
+        if (payload.getChannelId() == null || (!hasContent && !hasAttachments)) {
+            sendErrorToUser(headerAccessor, "INVALID_PAYLOAD", "channelId and content or attachments are required");
             return;
         }
 
@@ -70,15 +72,20 @@ public class ChatStompController {
                     .threadId(payload.getThreadId())
                     .replyToId(payload.getReplyToId())
                     .mentions(payload.getMentions())
+                    .attachments(payload.getAttachments())
                     .clientMessageId(payload.getClientMessageId())
                     .build();
 
             MessageResponse saved = messageService.sendMessage(payload.getChannelId(), request, userId, role);
             WebSocketEvent<MessageResponse> event = WebSocketEvent.of(WebSocketEvent.NEW_MESSAGE, saved);
 
-            messagingTemplate.convertAndSend("/topic/channel/" + saved.getChannelId(), event);
             if (saved.getThreadId() != null) {
+                // A thread reply belongs to the thread only — never echo it into the public channel
+                // feed (channel history already filters threadId != null, so echoing it here made
+                // replies flash in the main channel until the next reload).
                 messagingTemplate.convertAndSend("/topic/thread/" + saved.getThreadId(), event);
+            } else {
+                messagingTemplate.convertAndSend("/topic/channel/" + saved.getChannelId(), event);
             }
         } catch (ResponseStatusException e) {
             sendErrorToUser(headerAccessor, mapStatusToCode(e), e.getReason());

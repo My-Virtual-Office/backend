@@ -43,4 +43,13 @@ public interface MessageService {
 
     // returns null when the message was already deleted (caller should skip the broadcast)
     MessageResponse deleteMessage(String messageId, Integer requestingUserId, String requestingUserRole);
+
+    /** Toggle the caller's reaction with {@code emoji} on a message. */
+    MessageResponse toggleReaction(String messageId, String emoji, Integer userId);
+
+    /** Pin or unpin a message. */
+    MessageResponse setPinned(String messageId, boolean pinned, Integer userId);
+
+    /** Pinned messages in a channel (newest pin first). */
+    List<MessageResponse> getPinnedMessages(String channelId);
 }

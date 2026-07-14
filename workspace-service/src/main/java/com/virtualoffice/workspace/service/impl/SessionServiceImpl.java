@@ -21,6 +21,7 @@ import com.virtualoffice.workspace.dto.mapper.DeskMapper;
 import com.virtualoffice.workspace.dto.mapper.MapObjectMapper;
 import com.virtualoffice.workspace.dto.request.PresenceBatchRequest;
 import com.virtualoffice.workspace.dto.request.PresenceSyncRequest;
+import com.virtualoffice.workspace.dto.request.UpdateStatusRequest;
 import com.virtualoffice.workspace.dto.response.ChatContextResponse;
 import com.virtualoffice.workspace.dto.response.DeskResponse;
 import com.virtualoffice.workspace.dto.response.JoinValidationResponse;
@@ -91,7 +92,8 @@ public class SessionServiceImpl implements SessionService {
     public JoinValidationResponse validateJoin(Long workspaceId, Long userId) {
         Desk desk = activeDeskOrThrow(workspaceId, userId);
         return new JoinValidationResponse(userId, workspaceId, desk.getId(), desk.getFullName(),
-                desk.getAvatarCharacter(), desk.getPositionX(), desk.getPositionY(), desk.getRole(), true);
+                desk.getAvatarCharacter(), desk.getPositionX(), desk.getPositionY(), desk.getRole(),
+                desk.getStatus(), desk.getStatusEmoji(), desk.getStatusCustomText(), true);
     }
 
     @Override
@@ -113,6 +115,15 @@ public class SessionServiceImpl implements SessionService {
             deskRepository.findByWorkspaceIdAndUserId(workspaceId, update.userId())
                     .ifPresent(desk -> writePresence(desk, update));
         }
+    }
+
+    @Override
+    public void updateUserStatus(Long workspaceId, Long userId, UpdateStatusRequest request) {
+        Desk desk = activeDeskOrThrow(workspaceId, userId);
+        desk.setStatus(request.status());
+        desk.setStatusEmoji(request.statusEmoji());
+        desk.setStatusCustomText(request.statusCustomText());
+        deskRepository.save(desk);
     }
 
     @Override

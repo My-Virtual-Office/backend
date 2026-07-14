@@ -18,6 +18,7 @@
 package com.virtualoffice.workspace.service;
 
 import com.virtualoffice.workspace.dto.request.UpdateDeskRequest;
+import com.virtualoffice.workspace.dto.request.UpdateMembershipRequest;
 import com.virtualoffice.workspace.dto.request.UpdateStatusRequest;
 import com.virtualoffice.workspace.dto.response.DeskResponse;
 import org.springframework.data.domain.Page;
@@ -35,5 +36,11 @@ public interface DeskService {
 
     DeskResponse updateStatus(Long workspaceId, Long deskId, UpdateStatusRequest request, Long requesterId);
 
+    DeskResponse updatePosition(Long workspaceId, Long deskId,
+                                com.virtualoffice.workspace.dto.request.UpdatePositionRequest request, Long requesterId);
+
     void removeMember(Long workspaceId, Long deskId, Long requesterId);
+
+    /** ADMIN: update another member's role / title / team assignment. */
+    DeskResponse updateMembership(Long workspaceId, Long deskId, UpdateMembershipRequest request, Long requesterId);
 }

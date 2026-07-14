@@ -1,0 +1,69 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: calendar-service
+  datasource:
+    # Reuses the shared Postgres instance; calendar owns its own `calendar` schema (below),
+    # so it never collides with workspace-service's tables/flyway history in the same database.
+    url: ${CALENDAR_DB_URL:jdbc:postgresql://localhost:5432/workspace}
+    username: ${CALENDAR_DB_USER:workspace}
+    password: ${CALENDAR_DB_PASSWORD:workspace}
+  jpa:
+    hibernate:
+      # Flyway owns the schema; Hibernate only validates the mapping against it.
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: calendar
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    # Isolate calendar's tables + flyway_schema_history in a dedicated schema in the shared DB.
+    schemas: calendar
+    default-schema: calendar
+    create-schemas: true
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
+# Where reminder notifications are published (consumed by notifications-service).
+notifications:
+  exchange: ${NOTIFICATIONS_EXCHANGE:notifications.exchange}
+  routing:
+    key: ${NOTIFICATIONS_ROUTING_KEY:routing.key}
+
+app:
+  url: ${APP_URL:http://localhost:3001}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+# Internal API of workspace-service, used by the auto-status scheduler to flip a user's
+# Desk status server-to-server (carries the shared X-Internal-Token).
+workspace:
+  service:
+    base-url: ${WORKSPACE_SERVICE_URL:http://localhost:8087}
+    internal-token: ${INTERNAL_API_TOKEN:dev-internal-token}
+
+# Auto-status-from-calendar: while a busy event is active, the owner's Desk shows "In a meeting".
+calendar:
+  reminder:
+    interval-ms: ${CALENDAR_REMINDER_INTERVAL_MS:60000}
+  auto-status:
+    enabled: ${CALENDAR_AUTO_STATUS_ENABLED:true}
+    interval-ms: ${CALENDAR_AUTO_STATUS_INTERVAL_MS:60000}
+    # The marker written to statusCustomText; on revert we only clear a status still carrying it,
+    # so a status the user changed manually is never clobbered.
+    marker-text: "In a meeting"
+    emoji: "\U0001F4C5"
