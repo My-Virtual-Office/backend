@@ -27,6 +27,10 @@ spring:
           uri: ${CALENDAR_SERVICE_URL:http://localhost:8083}
           predicates:
             - Path=/api/calendar/**
+        - id: tasks-service
+          uri: ${TASKS_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/api/tasks/**
         - id: notifications-service
           uri: ${NOTIFICATIONS_SERVICE_URL:http://localhost:8082}
           predicates:
