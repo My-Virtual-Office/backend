@@ -66,8 +66,11 @@ public class InAppNotificationService {
 
         Map<String, Object> data = new HashMap<>();
         data.put("taskId",      payload.get("taskId"));
+        data.put("taskNumber",  payload.get("taskNumber"));
+        data.put("spaceId",     payload.get("spaceId"));
         data.put("assignedBy",  payload.get("assignedBy"));
         data.put("workspaceId", payload.get("workspaceId"));
+        data.put("refType",     "task");
         data.put("dueAt",       payload.get("dueAt"));
 
         Notification notification = Notification.builder()

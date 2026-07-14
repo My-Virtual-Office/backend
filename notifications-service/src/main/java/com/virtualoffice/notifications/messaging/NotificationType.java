@@ -25,5 +25,6 @@ public enum NotificationType {
     TASK_ASSIGNED,
     TASK_REMINDER,
     MEETING_REMINDER,
-    WORKSPACE_INVITE
+    WORKSPACE_INVITE,
+    MENTION
 }

@@ -52,6 +52,8 @@ public class MessageServiceImpl implements MessageService {
     private final MessageRepository messageRepository;
     private final ChannelService channelService;
     private final ThreadRepository threadRepository;
+    private final com.virtualoffice.chat_service.repository.ChannelRepository channelRepository;
+    private final com.virtualoffice.chat_service.messaging.NotificationPublisher notificationPublisher;
 
     @Override
     public MessageResponse sendMessage(String channelId, SendMessageRequest request, Integer senderId, String senderRole) {
@@ -111,7 +113,9 @@ public class MessageServiceImpl implements MessageService {
                 .build();
 
         try {
-            return DtoMapper.toMessageResponse(messageRepository.save(message));
+            MessageResponse resp = DtoMapper.toMessageResponse(messageRepository.save(message));
+            publishMentions(resp, channelId);
+            return resp;
         } catch (DuplicateKeyException e) {
             if (clientMsgId != null) {
                 return messageRepository.findBySenderIdAndClientMessageId(senderId, clientMsgId)
@@ -119,6 +123,33 @@ public class MessageServiceImpl implements MessageService {
                         .orElseThrow(() -> e);
             }
             throw e;
+        }
+    }
+
+    /** Notify every @mentioned member (except the sender) with a click-through to the channel. */
+    private void publishMentions(MessageResponse resp, String channelId) {
+        List<Integer> mentions = resp.getMentions();
+        if (mentions == null || mentions.isEmpty()) return;
+        var channel = channelRepository.findById(new ObjectId(channelId)).orElse(null);
+        String channelName = channel != null ? channel.getName() : "a channel";
+        Integer workspaceId = channel != null ? channel.getWorkspaceId() : null;
+        String content = resp.getContent();
+        String snippet = (content == null || content.isBlank())
+                ? "(attachment)"
+                : (content.length() > 120 ? content.substring(0, 120) + "…" : content);
+        for (Integer uid : mentions) {
+            if (uid == null || uid.equals(resp.getSenderId())) continue;
+            Map<String, Object> payload = new java.util.HashMap<>();
+            payload.put("userId", uid.longValue());
+            payload.put("title", "You were mentioned in #" + channelName);
+            payload.put("body", snippet);
+            payload.put("refType", "channel");
+            payload.put("channelId", channelId);
+            payload.put("channelName", channelName);
+            if (workspaceId != null) payload.put("workspaceId", workspaceId);
+            payload.put("messageId", resp.getId());
+            notificationPublisher.publish(
+                    com.virtualoffice.chat_service.messaging.NotificationType.MENTION, payload);
         }
     }
 

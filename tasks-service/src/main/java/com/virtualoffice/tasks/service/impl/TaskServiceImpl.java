@@ -142,7 +142,10 @@ public class TaskServiceImpl implements TaskService {
                 (callerEmail != null && !callerEmail.isBlank()) ? callerEmail : "A teammate");
         payload.put("taskTitle", task.getTitle());
         payload.put("taskId", task.getId());
+        payload.put("taskNumber", task.getTaskNumber());
+        payload.put("spaceId", task.getSpaceId());
         payload.put("workspaceId", task.getWorkspaceId());
+        payload.put("refType", "task");
         publisher.publish(NotificationType.TASK_ASSIGNED, payload);
     }
 
