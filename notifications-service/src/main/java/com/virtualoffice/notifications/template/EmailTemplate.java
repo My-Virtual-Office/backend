@@ -50,6 +50,8 @@ public enum EmailTemplate {
                     "TASK_ASSIGNED is not an email type");
             case TASK_REMINDER          -> throw new IllegalArgumentException(
                     "TASK_REMINDER is not an email type");
+            case MENTION                -> throw new IllegalArgumentException(
+                    "MENTION is not an email type");
         };
     }
 }
