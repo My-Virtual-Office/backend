@@ -14,7 +14,7 @@ spring:
         - id: workspace-service
           uri: ${WORKSPACE_SERVICE_URL:http://localhost:8087}
           predicates:
-            - Path=/api/workspace/**
+            - Path=/api/workspace/**,/api/invitations/**
         - id: chat-service
           uri: ${CHAT_SERVICE_URL:http://localhost:8084}
           predicates:
@@ -23,6 +23,10 @@ spring:
           uri: ${ROOM_SERVICE_URL:http://localhost:8086}
           predicates:
             - Path=/api/rooms/**
+        - id: calendar-service
+          uri: ${CALENDAR_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/calendar/**
 
 # Shared signing secret with user-service; the gateway validates every token at the edge.
 jwt:

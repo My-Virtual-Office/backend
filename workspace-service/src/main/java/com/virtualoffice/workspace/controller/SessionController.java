@@ -19,6 +19,7 @@ package com.virtualoffice.workspace.controller;
 
 import com.virtualoffice.workspace.dto.request.PresenceBatchRequest;
 import com.virtualoffice.workspace.dto.request.PresenceSyncRequest;
+import com.virtualoffice.workspace.dto.request.UpdateStatusRequest;
 import com.virtualoffice.workspace.dto.response.ChatContextResponse;
 import com.virtualoffice.workspace.dto.response.JoinValidationResponse;
 import com.virtualoffice.workspace.dto.response.MemberRoleResponse;
@@ -29,6 +30,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -85,6 +87,16 @@ public class SessionController {
     @PostMapping("/presence/batch")
     public void presenceBatch(@PathVariable Long workspaceId, @Valid @RequestBody PresenceBatchRequest request) {
         sessionService.syncPresenceBatch(workspaceId, request);
+    }
+
+    @Operation(summary = "Set a member's presence status",
+            description = "Server-to-server (calendar-service auto-status): flips another user's Desk status "
+                    + "without their JWT. 404 if the user has no active desk in this workspace.")
+    @PatchMapping("/users/{userId}/status")
+    public void updateUserStatus(@PathVariable Long workspaceId,
+                                 @PathVariable Long userId,
+                                 @Valid @RequestBody UpdateStatusRequest request) {
+        sessionService.updateUserStatus(workspaceId, userId, request);
     }
 
     @Operation(summary = "List zones", description = "Zone bounds + voiceRoomId + proximityRadius for room-service voice.")

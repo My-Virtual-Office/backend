@@ -19,6 +19,7 @@ package com.virtualoffice.workspace.service;
 
 import com.virtualoffice.workspace.dto.request.PresenceBatchRequest;
 import com.virtualoffice.workspace.dto.request.PresenceSyncRequest;
+import com.virtualoffice.workspace.dto.request.UpdateStatusRequest;
 import com.virtualoffice.workspace.dto.response.ChatContextResponse;
 import com.virtualoffice.workspace.dto.response.JoinValidationResponse;
 import com.virtualoffice.workspace.dto.response.MemberRoleResponse;
@@ -39,6 +40,10 @@ public interface SessionService {
     void syncPresence(Long workspaceId, PresenceSyncRequest request);
 
     void syncPresenceBatch(Long workspaceId, PresenceBatchRequest request);
+
+    // Server-to-server status setter (calendar-service auto-status): flips another user's Desk
+    // status without their JWT. Distinct from the owner-only PATCH .../desks/{deskId}/status.
+    void updateUserStatus(Long workspaceId, Long userId, UpdateStatusRequest request);
 
     List<ZoneResponse> getZones(Long workspaceId);
 
