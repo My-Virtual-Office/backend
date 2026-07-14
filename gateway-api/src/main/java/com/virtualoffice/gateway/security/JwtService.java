@@ -56,4 +56,19 @@ public class JwtService {
             return Optional.empty();
         }
     }
+
+    /** The verified subject (the user's email), or empty if the token is invalid. */
+    public Optional<String> verifyAndExtractEmail(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(signingKey)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            String subject = claims.getSubject();
+            return (subject == null || subject.isBlank()) ? Optional.empty() : Optional.of(subject);
+        } catch (JwtException | IllegalArgumentException e) {
+            return Optional.empty();
+        }
+    }
 }

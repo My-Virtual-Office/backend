@@ -29,6 +29,7 @@ public class UserContext {
 
     private static final String HEADER_USER_ID = "X-User-Id";
     private static final String HEADER_USER_ROLE = "X-User-Role";
+    private static final String HEADER_USER_EMAIL = "X-User-Email";
 
     private static final String USER = "USER";
     private static final String ADMIN = "ADMIN";
@@ -38,6 +39,7 @@ public class UserContext {
     public static class UserInfo {
         private final Long userId;
         private final String role;
+        private final String email;
 
         public boolean isAdmin() {
             return ADMIN.equalsIgnoreCase(role);
@@ -51,6 +53,7 @@ public class UserContext {
     public static UserInfo fromRequest(HttpServletRequest request) {
         String userIdHeader = request.getHeader(HEADER_USER_ID);
         String role = request.getHeader(HEADER_USER_ROLE);
+        String email = request.getHeader(HEADER_USER_EMAIL);
 
         if (userIdHeader == null || userIdHeader.isBlank()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "missing X-User-Id header");
@@ -67,6 +70,6 @@ public class UserContext {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "X-User-Role must be USER or ADMIN");
         }
 
-        return new UserInfo(userId, role);
+        return new UserInfo(userId, role, email);
     }
 }

@@ -58,8 +58,8 @@ public class CalendarEventController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public EventResponse create(@Valid @RequestBody CreateEventRequest request, HttpServletRequest http) {
-        Long userId = UserContext.fromRequest(http).getUserId();
-        return service.create(userId, request);
+        UserContext.UserInfo user = UserContext.fromRequest(http);
+        return service.create(user.getUserId(), user.getEmail(), request);
     }
 
     @GetMapping

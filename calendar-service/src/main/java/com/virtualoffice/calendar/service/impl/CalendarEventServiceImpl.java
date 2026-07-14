@@ -42,7 +42,7 @@ public class CalendarEventServiceImpl implements CalendarEventService {
     }
 
     @Override
-    public EventResponse create(Long userId, CreateEventRequest request) {
+    public EventResponse create(Long userId, String email, CreateEventRequest request) {
         requireValidWindow(request.startTime(), request.endTime());
         CalendarEvent event = CalendarEvent.builder()
                 .userId(userId)
@@ -52,8 +52,22 @@ public class CalendarEventServiceImpl implements CalendarEventService {
                 .startTime(request.startTime())
                 .endTime(request.endTime())
                 .busy(request.busy() == null || request.busy())
+                .creatorEmail(email)
+                .reminderMinutes(request.reminderMinutes())
+                .attendees(toAttendeeMap(request.attendees()))
                 .build();
         return EventResponse.from(repository.save(event));
+    }
+
+    private static java.util.Map<Long, String> toAttendeeMap(
+            java.util.List<com.virtualoffice.calendar.dto.request.AttendeeInput> attendees) {
+        java.util.Map<Long, String> map = new java.util.HashMap<>();
+        if (attendees != null) {
+            for (var a : attendees) {
+                if (a != null && a.userId() != null) map.put(a.userId(), a.email());
+            }
+        }
+        return map;
     }
 
     @Override
@@ -84,6 +98,9 @@ public class CalendarEventServiceImpl implements CalendarEventService {
         event.setStartTime(request.startTime());
         event.setEndTime(request.endTime());
         event.setBusy(request.busy() == null || request.busy());
+        event.setReminderMinutes(request.reminderMinutes());
+        event.setReminderSentAt(null); // window/reminder changed → allow it to fire again
+        event.setAttendees(toAttendeeMap(request.attendees()));
         return EventResponse.from(repository.save(event));
     }
 

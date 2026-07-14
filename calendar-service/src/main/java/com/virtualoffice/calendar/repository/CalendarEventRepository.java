@@ -40,4 +40,7 @@ public interface CalendarEventRepository extends JpaRepository<CalendarEvent, Lo
     // Auto-status scan: every busy event whose window contains "now", across all users/workspaces.
     List<CalendarEvent> findByBusyTrueAndStartTimeLessThanEqualAndEndTimeGreaterThan(
             Instant nowForStart, Instant nowForEnd);
+
+    // Reminder scan: future events with a reminder set that hasn't fired yet.
+    List<CalendarEvent> findByReminderSentAtIsNullAndReminderMinutesIsNotNullAndStartTimeAfter(Instant now);
 }

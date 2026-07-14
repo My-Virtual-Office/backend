@@ -32,5 +32,7 @@ public record UpdateEventRequest(
         @Size(max = 4000) String description,
         @NotNull Instant startTime,
         @NotNull Instant endTime,
-        Boolean busy) {
+        Boolean busy,
+        Integer reminderMinutes,
+        java.util.List<AttendeeInput> attendees) {
 }

@@ -72,6 +72,25 @@ public class CalendarEvent {
     @Column(nullable = false)
     private boolean busy = true;
 
+    // The owner's email, captured from the trusted X-User-Email header, so reminders can be sent.
+    private String creatorEmail;
+
+    // Minutes before startTime to send a reminder (null = no reminder).
+    private Integer reminderMinutes;
+
+    // Set once the reminder has been dispatched, so it fires at most once.
+    private Instant reminderSentAt;
+
+    // Invited attendees: userId -> email. Everyone here is reminded/notified alongside the owner.
+    @jakarta.persistence.ElementCollection(fetch = jakarta.persistence.FetchType.EAGER)
+    @jakarta.persistence.CollectionTable(
+            name = "calendar_event_attendee",
+            joinColumns = @jakarta.persistence.JoinColumn(name = "event_id"))
+    @jakarta.persistence.MapKeyColumn(name = "attendee_user_id")
+    @jakarta.persistence.Column(name = "attendee_email")
+    @Builder.Default
+    private java.util.Map<Long, String> attendees = new java.util.HashMap<>();
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private Instant createdAt;

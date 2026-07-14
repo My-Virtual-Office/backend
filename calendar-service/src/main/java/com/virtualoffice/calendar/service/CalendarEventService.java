@@ -28,7 +28,7 @@ import java.util.Optional;
 /** Owner-scoped CRUD for calendar events; every operation acts on behalf of {@code userId}. */
 public interface CalendarEventService {
 
-    EventResponse create(Long userId, CreateEventRequest request);
+    EventResponse create(Long userId, String email, CreateEventRequest request);
 
     List<EventResponse> list(Long userId, Long workspaceId, Instant from, Instant to);
 

@@ -89,6 +89,36 @@ public class InAppNotificationService {
         }
     }
 
+    // Generic in-app notification from a payload carrying userId + title + body
+    // (used by MEETING_REMINDER and other non-task events).
+    public Optional<Notification> createGeneric(NotificationEvent event) {
+        Map<String, Object> payload = event.getPayload() != null ? event.getPayload() : Map.of();
+        Long userId = readLong(payload, "userId");
+        if (userId == null) {
+            log.error("Missing 'userId' in payload for {} event {}", event.getType(), event.getEventId());
+            return Optional.empty();
+        }
+        String title = readString(payload, "title");
+        String body  = readString(payload, "body");
+
+        Notification notification = Notification.builder()
+                .userId(userId)
+                .type(event.getType())
+                .title(title != null ? title : "Notification")
+                .body(body != null ? body : "")
+                .data(new HashMap<>(payload))
+                .read(false)
+                .eventId(event.getEventId())
+                .createdAt(Instant.now())
+                .build();
+        try {
+            return Optional.of(repository.save(notification));
+        } catch (DuplicateKeyException e) {
+            log.debug("Duplicate event {} ignored (idempotent insert)", event.getEventId());
+            return Optional.empty();
+        }
+    }
+
     public Page<Notification> list(Long userId, int page, int size) {
         return repository.findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(page, size));
     }

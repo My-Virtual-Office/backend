@@ -45,9 +45,21 @@ public class NotificationListener {
     @RabbitListener(queues = "${notifications.queue}")
     public void handle(NotificationEvent event) {
         switch (event.getType()) {
-            case SIGNUP_SUCCESS, LOGIN_SUCCESS, OTP, PASSWORD_RESET_SUCCESS -> handleEmail(event);
+            case SIGNUP_SUCCESS, LOGIN_SUCCESS, OTP, PASSWORD_RESET_SUCCESS, WORKSPACE_INVITE -> handleEmail(event);
             case TASK_ASSIGNED -> handleInApp(event);
+            // Meeting reminders are delivered both as an in-app pop-up and an email.
+            case MEETING_REMINDER -> {
+                handleMeetingInApp(event);
+                handleEmail(event);
+            }
         }
+    }
+
+    private void handleMeetingInApp(NotificationEvent event) {
+        inAppNotificationService.createGeneric(event)
+                .ifPresent(saved -> notificationPushService.push(
+                        saved.getUserId(),
+                        NotificationResponse.from(saved)));
     }
 
     private void handleEmail(NotificationEvent event) {

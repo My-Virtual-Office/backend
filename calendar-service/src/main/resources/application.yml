@@ -25,6 +25,20 @@ spring:
     schemas: calendar
     default-schema: calendar
     create-schemas: true
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
+# Where reminder notifications are published (consumed by notifications-service).
+notifications:
+  exchange: ${NOTIFICATIONS_EXCHANGE:notifications.exchange}
+  routing:
+    key: ${NOTIFICATIONS_ROUTING_KEY:routing.key}
+
+app:
+  url: ${APP_URL:http://localhost:3001}
 
 management:
   endpoints:
@@ -44,6 +58,8 @@ workspace:
 
 # Auto-status-from-calendar: while a busy event is active, the owner's Desk shows "In a meeting".
 calendar:
+  reminder:
+    interval-ms: ${CALENDAR_REMINDER_INTERVAL_MS:60000}
   auto-status:
     enabled: ${CALENDAR_AUTO_STATUS_ENABLED:true}
     interval-ms: ${CALENDAR_AUTO_STATUS_INTERVAL_MS:60000}

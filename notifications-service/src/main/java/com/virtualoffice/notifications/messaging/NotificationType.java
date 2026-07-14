@@ -22,5 +22,7 @@ public enum NotificationType {
     LOGIN_SUCCESS,
     OTP,
     PASSWORD_RESET_SUCCESS,
-    TASK_ASSIGNED
+    TASK_ASSIGNED,
+    MEETING_REMINDER,
+    WORKSPACE_INVITE
 }

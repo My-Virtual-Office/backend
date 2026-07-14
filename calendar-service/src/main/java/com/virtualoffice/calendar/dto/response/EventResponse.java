@@ -30,12 +30,18 @@ public record EventResponse(
         Instant startTime,
         Instant endTime,
         boolean busy,
+        Integer reminderMinutes,
+        java.util.List<Long> attendeeUserIds,
         Instant createdAt,
         Instant updatedAt) {
 
     public static EventResponse from(CalendarEvent e) {
         return new EventResponse(
                 e.getId(), e.getUserId(), e.getWorkspaceId(), e.getTitle(), e.getDescription(),
-                e.getStartTime(), e.getEndTime(), e.isBusy(), e.getCreatedAt(), e.getUpdatedAt());
+                e.getStartTime(), e.getEndTime(), e.isBusy(),
+                e.getReminderMinutes(),
+                e.getAttendees() == null ? java.util.List.of()
+                        : new java.util.ArrayList<>(e.getAttendees().keySet()),
+                e.getCreatedAt(), e.getUpdatedAt());
     }
 }
