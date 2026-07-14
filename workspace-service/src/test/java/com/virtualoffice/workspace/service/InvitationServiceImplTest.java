@@ -23,6 +23,7 @@ import com.virtualoffice.workspace.dto.response.InvitationResponse;
 import com.virtualoffice.workspace.exception.ConflictException;
 import com.virtualoffice.workspace.exception.GoneException;
 import com.virtualoffice.workspace.exception.ResourceNotFoundException;
+import com.virtualoffice.workspace.messaging.NotificationPublisher;
 import com.virtualoffice.workspace.messaging.WorkspaceChannelEventPublisher;
 import com.virtualoffice.workspace.model.Desk;
 import com.virtualoffice.workspace.model.WorkspaceInvitation;
@@ -53,6 +54,8 @@ class InvitationServiceImplTest {
     private DeskRepository deskRepository;
     private WorkspaceAccessGuard accessGuard;
     private WorkspaceChannelEventPublisher channelEvents;
+    private com.virtualoffice.workspace.repository.WorkspaceRepository workspaceRepository;
+    private NotificationPublisher notifications;
     private InvitationServiceImpl service;
 
     @BeforeEach
@@ -61,8 +64,11 @@ class InvitationServiceImplTest {
         deskRepository = mock(DeskRepository.class);
         accessGuard = mock(WorkspaceAccessGuard.class);
         channelEvents = mock(WorkspaceChannelEventPublisher.class);
+        workspaceRepository = mock(com.virtualoffice.workspace.repository.WorkspaceRepository.class);
+        notifications = mock(NotificationPublisher.class);
         service = new InvitationServiceImpl(invitationRepository, deskRepository, accessGuard,
-                new InvitationMapperImpl(), channelEvents);
+                new InvitationMapperImpl(), channelEvents, workspaceRepository, notifications,
+                "http://localhost:3001");
     }
 
     private WorkspaceInvitation invitation(InviteStatus status, Instant expiresAt) {
