@@ -36,6 +36,9 @@ public interface DeskService {
 
     DeskResponse updateStatus(Long workspaceId, Long deskId, UpdateStatusRequest request, Long requesterId);
 
+    DeskResponse updatePosition(Long workspaceId, Long deskId,
+                                com.virtualoffice.workspace.dto.request.UpdatePositionRequest request, Long requesterId);
+
     void removeMember(Long workspaceId, Long deskId, Long requesterId);
 
     /** ADMIN: update another member's role / title / team assignment. */

@@ -117,6 +117,16 @@ public class DeskServiceImpl implements DeskService {
     }
 
     @Override
+    public DeskResponse updatePosition(Long workspaceId, Long deskId,
+                                       com.virtualoffice.workspace.dto.request.UpdatePositionRequest request,
+                                       Long requesterId) {
+        Desk desk = requireOwnDesk(workspaceId, deskId, requesterId);
+        desk.setPositionX(request.positionX());
+        desk.setPositionY(request.positionY());
+        return full(deskRepository.save(desk));
+    }
+
+    @Override
     public void removeMember(Long workspaceId, Long deskId, Long requesterId) {
         accessGuard.requireRole(workspaceId, requesterId, WorkspaceRole.ADMIN);
         Desk desk = findOrThrow(workspaceId, deskId);

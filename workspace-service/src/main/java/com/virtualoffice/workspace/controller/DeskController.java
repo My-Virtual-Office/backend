@@ -96,6 +96,16 @@ public class DeskController {
         return deskService.updateStatus(workspaceId, deskId, request, userId);
     }
 
+    @Operation(summary = "Claim/move my desk", description = "Owner-only. Sets the desk's position in the office; others can't sit there.")
+    @PatchMapping("/{deskId}/position")
+    public DeskResponse updatePosition(@PathVariable Long workspaceId,
+                                       @PathVariable Long deskId,
+                                       @Valid @RequestBody com.virtualoffice.workspace.dto.request.UpdatePositionRequest request,
+                                       HttpServletRequest http) {
+        Long userId = UserContext.fromRequest(http).getUserId();
+        return deskService.updatePosition(workspaceId, deskId, request, userId);
+    }
+
     @Operation(summary = "Update a member's membership",
             description = "Requires ADMIN. Sets another member's role / title / team (teamId 0 unassigns).")
     @PatchMapping("/{deskId}/membership")
