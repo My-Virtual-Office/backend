@@ -47,6 +47,8 @@ public class NotificationListener {
         switch (event.getType()) {
             case SIGNUP_SUCCESS, LOGIN_SUCCESS, OTP, PASSWORD_RESET_SUCCESS, WORKSPACE_INVITE -> handleEmail(event);
             case TASK_ASSIGNED -> handleInApp(event);
+            // Task due reminders are in-app only (no email); reuse the generic in-app builder.
+            case TASK_REMINDER -> handleMeetingInApp(event);
             // Meeting reminders are delivered both as an in-app pop-up and an email.
             case MEETING_REMINDER -> {
                 handleMeetingInApp(event);

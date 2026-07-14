@@ -48,6 +48,8 @@ public enum EmailTemplate {
             case WORKSPACE_INVITE       -> WORKSPACE_INVITE;
             case TASK_ASSIGNED          -> throw new IllegalArgumentException(
                     "TASK_ASSIGNED is not an email type");
+            case TASK_REMINDER          -> throw new IllegalArgumentException(
+                    "TASK_REMINDER is not an email type");
         };
     }
 }
