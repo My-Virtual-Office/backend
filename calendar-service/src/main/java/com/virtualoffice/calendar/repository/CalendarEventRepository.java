@@ -41,6 +41,13 @@ public interface CalendarEventRepository extends JpaRepository<CalendarEvent, Lo
     List<CalendarEvent> findByBusyTrueAndStartTimeLessThanEqualAndEndTimeGreaterThan(
             Instant nowForStart, Instant nowForEnd);
 
+    // Auto-status APPLY: busy events now active whose owner hasn't been flipped to "In a meeting" yet.
+    List<CalendarEvent> findByBusyTrueAndStatusAppliedFalseAndStartTimeLessThanEqualAndEndTimeGreaterThan(
+            Instant nowForStart, Instant nowForEnd);
+
+    // Auto-status CLEAR: events we flipped that have now ended and haven't been reverted yet.
+    List<CalendarEvent> findByStatusAppliedTrueAndStatusClearedFalseAndEndTimeLessThanEqual(Instant now);
+
     // Reminder scan: future events with a reminder set that hasn't fired yet.
     List<CalendarEvent> findByReminderSentAtIsNullAndReminderMinutesIsNotNullAndStartTimeAfter(Instant now);
 }

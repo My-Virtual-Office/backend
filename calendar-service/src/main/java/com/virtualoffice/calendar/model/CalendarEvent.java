@@ -91,6 +91,16 @@ public class CalendarEvent {
     @Builder.Default
     private java.util.Map<Long, String> attendees = new java.util.HashMap<>();
 
+    // Auto-status bookkeeping (calendar auto-status scheduler). One-shot flags so the owner's
+    // Desk is flipped to "In a meeting" once when a busy event starts and reverted once when it ends.
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean statusApplied = false;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean statusCleared = false;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
