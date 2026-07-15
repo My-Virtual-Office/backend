@@ -35,5 +35,7 @@ public record CreateEventRequest(
         @NotNull Instant endTime,
         Boolean busy,
         Integer reminderMinutes,
+        @Size(max = 16) String color,
+        @Size(max = 500) String meetingLink,
         java.util.List<AttendeeInput> attendees) {
 }

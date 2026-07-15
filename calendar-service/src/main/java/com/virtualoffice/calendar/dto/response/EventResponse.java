@@ -30,6 +30,8 @@ public record EventResponse(
         Instant startTime,
         Instant endTime,
         boolean busy,
+        String color,
+        String meetingLink,
         Integer reminderMinutes,
         java.util.List<Long> attendeeUserIds,
         Instant createdAt,
@@ -39,6 +41,7 @@ public record EventResponse(
         return new EventResponse(
                 e.getId(), e.getUserId(), e.getWorkspaceId(), e.getTitle(), e.getDescription(),
                 e.getStartTime(), e.getEndTime(), e.isBusy(),
+                e.getColor(), e.getMeetingLink(),
                 e.getReminderMinutes(),
                 e.getAttendees() == null ? java.util.List.of()
                         : new java.util.ArrayList<>(e.getAttendees().keySet()),

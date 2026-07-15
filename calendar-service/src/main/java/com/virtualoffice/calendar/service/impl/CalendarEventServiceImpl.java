@@ -55,6 +55,8 @@ public class CalendarEventServiceImpl implements CalendarEventService {
                 .startTime(request.startTime())
                 .endTime(request.endTime())
                 .busy(request.busy() == null || request.busy())
+                .color(request.color())
+                .meetingLink(request.meetingLink())
                 .creatorEmail(email)
                 .reminderMinutes(request.reminderMinutes())
                 .attendees(toAttendeeMap(request.attendees()))
@@ -102,6 +104,8 @@ public class CalendarEventServiceImpl implements CalendarEventService {
         event.setStartTime(request.startTime());
         event.setEndTime(request.endTime());
         event.setBusy(request.busy() == null || request.busy());
+        event.setColor(request.color());
+        event.setMeetingLink(request.meetingLink());
         event.setReminderMinutes(request.reminderMinutes());
         event.setReminderSentAt(null); // window/reminder changed → allow it to fire again
         event.setAttendees(toAttendeeMap(request.attendees()));

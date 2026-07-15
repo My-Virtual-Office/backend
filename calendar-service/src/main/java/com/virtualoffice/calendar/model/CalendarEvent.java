@@ -61,6 +61,12 @@ public class CalendarEvent {
 
     private String description;
 
+    /** Optional colour for the shared calendar (hex or palette key). Null = default. */
+    private String color;
+
+    /** Optional join link (Zoom/Meet/room URL/etc). Null = none. */
+    private String meetingLink;
+
     @Column(nullable = false)
     private Instant startTime;
 
