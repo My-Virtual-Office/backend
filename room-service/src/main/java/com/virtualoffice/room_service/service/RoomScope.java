@@ -15,23 +15,17 @@
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
  */
-package com.virtualoffice.room_service.dto.response;
+package com.virtualoffice.room_service.service;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+/** How far {@code GET /api/rooms} should look when listing rooms. */
+public enum RoomScope {
 
-import java.util.List;
+    /** Only rooms the caller is already a member of. The default, and the historical behaviour. */
+    MEMBER,
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class JoinRoomResponse {
-    private RoomResponse room;
-    private String agoraAppId;
-    private String agoraChannelName;
-    private String agoraToken;
-    private List<ParticipantResponse> participants;
+    /**
+     * Every room in the workspace, so voice channels can be browsed and joined the way Discord's
+     * are. Requires the caller to hold a workspace desk.
+     */
+    WORKSPACE
 }

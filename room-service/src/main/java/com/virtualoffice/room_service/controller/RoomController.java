@@ -21,9 +21,11 @@ import com.virtualoffice.room_service.dto.request.AddMemberRequest;
 import com.virtualoffice.room_service.dto.request.CreateRoomRequest;
 import com.virtualoffice.room_service.dto.request.UpdateRoomRequest;
 import com.virtualoffice.room_service.dto.response.PaginatedResponse;
+import com.virtualoffice.room_service.dto.response.ParticipantResponse;
 import com.virtualoffice.room_service.dto.response.RoomResponse;
 import com.virtualoffice.room_service.service.PresenceService;
 import com.virtualoffice.room_service.service.RoomPushService;
+import com.virtualoffice.room_service.service.RoomScope;
 import com.virtualoffice.room_service.service.RoomService;
 import com.virtualoffice.room_service.util.UserContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,6 +36,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/rooms")
@@ -54,15 +61,51 @@ public class RoomController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    /**
+     * @param scope {@code member} (default) lists only the caller's rooms; {@code workspace} lists
+     *              every room in the workspace so voice channels can be browsed before joining.
+     */
     @GetMapping
     public ResponseEntity<PaginatedResponse<RoomResponse>> getRooms(
             @RequestParam Integer workspaceId,
             @RequestParam(defaultValue = "1") @Min(1) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit,
+            @RequestParam(defaultValue = "member") String scope,
             HttpServletRequest httpRequest) {
 
         UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
-        return ResponseEntity.ok(roomService.getRooms(workspaceId, user.getUserId(), page, limit));
+        RoomScope roomScope = switch (scope.toLowerCase()) {
+            case "member" -> RoomScope.MEMBER;
+            case "workspace" -> RoomScope.WORKSPACE;
+            default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "scope must be 'member' or 'workspace'");
+        };
+        return ResponseEntity.ok(roomService.getRooms(workspaceId, user.getUserId(), page, limit, roomScope));
+    }
+
+    /**
+     * Live occupancy of every voice room in the workspace, keyed by room id.
+     *
+     * A sidebar needs to show who is in each channel, including channels the caller has not
+     * joined — and {@code GET /{id}/participants} is member-gated, so asking per room means one
+     * 403 per room the caller is not in. This answers it in a single workspace-scoped call.
+     */
+    @GetMapping("/presence")
+    public ResponseEntity<Map<String, List<ParticipantResponse>>> workspacePresence(
+            @RequestParam Integer workspaceId,
+            HttpServletRequest httpRequest) {
+
+        UserContext.UserInfo user = UserContext.fromRequest(httpRequest);
+        // WORKSPACE scope applies the workspace-desk check, so no separate gate is needed here.
+        List<RoomResponse> rooms = roomService
+                .getRooms(workspaceId, user.getUserId(), 1, 100, RoomScope.WORKSPACE)
+                .getContent();
+
+        Map<String, List<ParticipantResponse>> presence = new LinkedHashMap<>();
+        for (RoomResponse room : rooms) {
+            presence.put(room.getId(), presenceService.listParticipants(room.getId()));
+        }
+        return ResponseEntity.ok(presence);
     }
 
     @GetMapping("/{id}")

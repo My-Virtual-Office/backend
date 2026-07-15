@@ -15,23 +15,30 @@
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
  */
-package com.virtualoffice.room_service.dto.response;
+package com.virtualoffice.room_service.dto.request;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
+/** Asks for a token for the proximity/zone channel the caller was told to join. */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JoinRoomResponse {
-    private RoomResponse room;
-    private String agoraAppId;
-    private String agoraChannelName;
-    private String agoraToken;
-    private List<ParticipantResponse> participants;
+public class VoiceTokenRequest {
+
+    @NotNull(message = "workspaceId is required")
+    private Integer workspaceId;
+
+    /**
+     * The channel from VOICE_GROUP_CHANGED; must match what the server assigned this user.
+     *
+     * Optional: omit it to ask "which channel am I in right now?". VOICE_GROUP_CHANGED only
+     * carries *changes*, so a client that connects after its group already formed never sees an
+     * event for it — on connect it asks with no channel and gets whatever it is currently in.
+     */
+    private String channel;
 }

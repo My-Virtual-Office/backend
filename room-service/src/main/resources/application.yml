@@ -27,8 +27,11 @@ room:
     routing-key: room.channel.event
   agora:
     channel-prefix: room-
-    app-id: 5db80389fc284a3a8c166979882f118d
-    app-certificate: "a6790438be834910b050de22cfcf2555"
+    # Compose passes ROOM_AGORA_APP_ID / ROOM_AGORA_APP_CERTIFICATE, which Spring's relaxed
+    # binding maps onto these keys; AGORA_APP_ID / AGORA_APP_CERTIFICATE work for bare `mvn`
+    # runs. Blank certificate => AgoraTokenBuilder returns "" (App-ID-only, no token auth).
+    app-id: ${AGORA_APP_ID:}
+    app-certificate: ${AGORA_APP_CERTIFICATE:}
   redis:
     ticket-prefix: "room:ws-ticket:"
   presence:
@@ -51,10 +54,16 @@ workspace:
     zones-cache-ttl-seconds: ${WORKSPACE_ZONES_CACHE_TTL:30}
 
 management:
+  metrics:
+    distribution:
+      # Export _bucket series so Grafana can compute p95/p99 with histogram_quantile().
+      percentiles-histogram:
+        http.server.requests: true
+        hikaricp.connections.acquire: true
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: always

@@ -34,4 +34,13 @@ public interface ProximityService {
      * (userId → Agora channel) for avatars that are in a channel.
      */
     Map<Integer, String> updatePositions(int workspaceId, List<PlayerPosition> positions);
+
+    /**
+     * The Agora channel this avatar is currently assigned to, or {@code null} if it is in none.
+     *
+     * Lets the service mint a proximity token only for the caller who actually belongs in that
+     * channel: VOICE_GROUP_CHANGED is broadcast to the whole workspace, so putting per-user tokens
+     * in it would hand everyone a credential bound to somebody else's uid.
+     */
+    String assignedChannel(int workspaceId, Integer userId);
 }

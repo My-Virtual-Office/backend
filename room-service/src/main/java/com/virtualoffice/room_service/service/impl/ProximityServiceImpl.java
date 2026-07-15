@@ -84,6 +84,13 @@ public class ProximityServiceImpl implements ProximityService {
         }
     }
 
+    @Override
+    public String assignedChannel(int workspaceId, Integer userId) {
+        synchronized (locks.computeIfAbsent(workspaceId, k -> new Object())) {
+            return lastAssignments.getOrDefault(workspaceId, Map.of()).get(userId);
+        }
+    }
+
     /** Avatars whose channel differs from the previous assignment (including leaving voice). */
     private List<VoiceGroupChange> diff(Map<Integer, String> previous, Map<Integer, String> current) {
         Set<Integer> affected = new HashSet<>(previous.keySet());

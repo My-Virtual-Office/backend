@@ -27,6 +27,7 @@ import com.virtualoffice.room_service.dto.response.RoomResponse;
 import com.virtualoffice.room_service.messaging.RoomChannelEventPublisher;
 import com.virtualoffice.room_service.model.Room;
 import com.virtualoffice.room_service.repository.RoomRepository;
+import com.virtualoffice.room_service.service.RoomScope;
 import com.virtualoffice.room_service.service.RoomService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -114,12 +115,28 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     public PaginatedResponse<RoomResponse> getRooms(Integer workspaceId, Integer userId, int page, int limit) {
+        return getRooms(workspaceId, userId, page, limit, RoomScope.MEMBER);
+    }
+
+    @Override
+    public PaginatedResponse<RoomResponse> getRooms(Integer workspaceId, Integer userId, int page, int limit,
+                                                    RoomScope scope) {
         PageRequest pageRequest = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, "updatedAt"));
 
-        // Listing is membership-filtered (backend.md): a caller only sees rooms they belong to,
-        // not every room in the workspace. Using the unfiltered findByWorkspaceId leaked private
-        // rooms to non-members.
-        Page<Room> roomPage = roomRepository.findByWorkspaceIdAndMember(workspaceId, userId, pageRequest);
+        Page<Room> roomPage;
+        if (scope == RoomScope.WORKSPACE) {
+            // Browsable voice channels: you cannot click into a channel you cannot see, and
+            // membership is not the access gate anyway — /join (ensureMemberAndGet) already
+            // auto-adds any workspace member to any room in that workspace. So this reveals room
+            // names but grants nothing new. Names still deserve a gate, and the member-filtered
+            // query below gets one implicitly, so require a workspace desk explicitly here.
+            workspaceClient.requireRole(workspaceId, userId, WorkspaceRole.MEMBER);
+            roomPage = roomRepository.findByWorkspaceId(workspaceId, pageRequest);
+        } else {
+            // Default stays membership-filtered (backend.md): a caller only sees rooms they belong
+            // to, not every room in the workspace.
+            roomPage = roomRepository.findByWorkspaceIdAndMember(workspaceId, userId, pageRequest);
+        }
 
         List<RoomResponse> rooms = roomPage.getContent()
                 .stream()

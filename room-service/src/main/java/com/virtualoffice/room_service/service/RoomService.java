@@ -28,6 +28,13 @@ public interface RoomService {
 
     PaginatedResponse<RoomResponse> getRooms(Integer workspaceId, Integer userId, int page, int limit);
 
+    /**
+     * As {@link #getRooms(Integer, Integer, int, int)}, but {@link RoomScope#WORKSPACE} lists every
+     * room in the workspace rather than only the caller's own.
+     */
+    PaginatedResponse<RoomResponse> getRooms(Integer workspaceId, Integer userId, int page, int limit,
+                                             RoomScope scope);
+
     RoomResponse getRoom(String roomId, Integer userId);
 
     RoomResponse updateRoom(String roomId, UpdateRoomRequest request, Integer userId);

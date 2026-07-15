@@ -22,16 +22,19 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
+/**
+ * Everything a client needs to join a proximity/zone Agora channel. The App ID rides along so the
+ * clients need no build-time Agora config — the server is the single source of truth for it.
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JoinRoomResponse {
-    private RoomResponse room;
+public class VoiceTokenResponse {
     private String agoraAppId;
     private String agoraChannelName;
+    /** Empty when no App Certificate is configured (App-ID-only mode). */
     private String agoraToken;
-    private List<ParticipantResponse> participants;
+    /** The uid the token is bound to; the client must join with exactly this. */
+    private Integer uid;
 }

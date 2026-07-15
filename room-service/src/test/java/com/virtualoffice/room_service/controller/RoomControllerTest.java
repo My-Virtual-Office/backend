@@ -24,6 +24,7 @@ import com.virtualoffice.room_service.dto.response.PaginatedResponse;
 import com.virtualoffice.room_service.dto.response.RoomResponse;
 import com.virtualoffice.room_service.service.PresenceService;
 import com.virtualoffice.room_service.service.RoomPushService;
+import com.virtualoffice.room_service.service.RoomScope;
 import com.virtualoffice.room_service.service.RoomService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
@@ -33,10 +34,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -81,12 +84,36 @@ class RoomControllerTest {
         HttpServletRequest httpRequest = mockRequest("10", "USER");
         PaginatedResponse<RoomResponse> expected = PaginatedResponse.<RoomResponse>builder()
                 .content(List.of()).currentPage(1).totalElements(0).totalPages(0).build();
-        when(roomService.getRooms(1, 10, 1, 20)).thenReturn(expected);
+        when(roomService.getRooms(1, 10, 1, 20, RoomScope.MEMBER)).thenReturn(expected);
 
-        ResponseEntity<PaginatedResponse<RoomResponse>> response = controller.getRooms(1, 1, 20, httpRequest);
+        ResponseEntity<PaginatedResponse<RoomResponse>> response =
+                controller.getRooms(1, 1, 20, "member", httpRequest);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(expected);
+    }
+
+    @Test
+    void shouldListWorkspaceScopedRooms() {
+        HttpServletRequest httpRequest = mockRequest("10", "USER");
+        PaginatedResponse<RoomResponse> expected = PaginatedResponse.<RoomResponse>builder()
+                .content(List.of()).currentPage(1).totalElements(0).totalPages(0).build();
+        when(roomService.getRooms(1, 10, 1, 20, RoomScope.WORKSPACE)).thenReturn(expected);
+
+        ResponseEntity<PaginatedResponse<RoomResponse>> response =
+                controller.getRooms(1, 1, 20, "workspace", httpRequest);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo(expected);
+    }
+
+    @Test
+    void shouldRejectUnknownScope() {
+        HttpServletRequest httpRequest = mockRequest("10", "USER");
+
+        assertThatThrownBy(() -> controller.getRooms(1, 1, 20, "everything", httpRequest))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("scope must be");
     }
 
     @Test
