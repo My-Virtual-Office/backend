@@ -74,4 +74,14 @@ public class User {
 
     @Column(name = "profile_picture_type")
     private String profilePictureType;
+
+    /**
+     * The user's PUBLIC end-to-end key (an ECDH P-256 JWK), published by their
+     * browser so others can encrypt direct messages to them.
+     *
+     * Only ever the public half. The private key is generated in the browser and
+     * never leaves it — which is precisely why the server cannot read DM content.
+     */
+    @Column(name = "e2e_public_key", columnDefinition = "TEXT")
+    private String e2ePublicKey;
 }

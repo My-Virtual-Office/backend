@@ -125,13 +125,33 @@ public class UserService {
 
     public ResponseEntity<List<Map<String, Object>>> getAllUsers() {
         List<Map<String, Object>> users = userRepository.findAll().stream()
-                .map(u -> Map.<String, Object>of(
-                        "id", u.getId(),
-                        "firstName", u.getFirstName(),
-                        "lastName", u.getLastName(),
-                        "email", u.getEmail()
-                ))
+                .map(u -> {
+                    // Map.of rejects nulls and e2ePublicKey is null until the
+                    // user's browser publishes one, so build it mutably.
+                    Map<String, Object> m = new java.util.HashMap<>();
+                    m.put("id", u.getId());
+                    m.put("firstName", u.getFirstName());
+                    m.put("lastName", u.getLastName());
+                    m.put("email", u.getEmail());
+                    m.put("e2ePublicKey", u.getE2ePublicKey());
+                    return m;
+                })
                 .toList();
         return ResponseEntity.ok(users);
+    }
+
+    /**
+     * Publish the caller's PUBLIC end-to-end key so peers can encrypt DMs to
+     * them. The private half never leaves the browser.
+     */
+    public ResponseEntity<ApiResponse> updateE2ePublicKey(String publicKey) {
+        if (publicKey == null || publicKey.isBlank() || publicKey.length() > 4000) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse("Failed").add("Error", "Invalid public key"));
+        }
+        User user = getCurrentUser();
+        user.setE2ePublicKey(publicKey);
+        userRepository.save(user);
+        return ResponseEntity.ok(new ApiResponse("succeeded"));
     }
 }

@@ -59,6 +59,17 @@ public class UserController {
         return userService.getAllUsers();
     }
 
+    /**
+     * Publish this user's PUBLIC end-to-end key (ECDH P-256 JWK) so peers can
+     * encrypt direct messages to them. The matching private key is generated in
+     * the browser and never sent here — the server stores only the public half
+     * and therefore cannot decrypt DM content.
+     */
+    @PutMapping("/me/e2e-key")
+    public ResponseEntity<ApiResponse> updateE2eKey(@RequestBody Map<String, String> body) {
+        return userService.updateE2ePublicKey(body.get("publicKey"));
+    }
+
     @GetMapping("/me/photo")
     public ResponseEntity<byte[]> getPhoto() {
         User user = userService.getCurrentUserProfile();
