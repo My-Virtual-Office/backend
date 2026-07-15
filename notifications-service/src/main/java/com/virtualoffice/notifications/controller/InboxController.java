@@ -95,7 +95,13 @@ public class InboxController {
         return Map.of("updated", service.markAllRead(userId));
     }
 
-    @DeleteMapping("/{id}")
+    // The id pattern is pinned to the Mongo ObjectId shape on purpose. An
+    // unconstrained "/{id}" also matches "/api/notifications/connect", and
+    // because RequestMappingHandlerMapping is consulted before the STOMP
+    // WebSocketHandlerMapping, it swallowed the notifications WebSocket
+    // handshake (a GET) and answered "method not supported" — so the realtime
+    // connection could never be established.
+    @DeleteMapping("/{id:[0-9a-fA-F]{24}}")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         Long userId = userContext.currentUserId();
         return service.delete(id, userId)
