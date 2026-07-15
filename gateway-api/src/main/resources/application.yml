@@ -35,6 +35,14 @@ spring:
           uri: ${NOTIFICATIONS_SERVICE_URL:http://localhost:8082}
           predicates:
             - Path=/api/notifications/**
+        # AI assistant. Authenticated like everything else: the filter below
+        # injects the trusted X-User-* headers and forwards the caller's bearer
+        # token, which ai-service reuses for its own downstream calls — so the
+        # assistant can only ever act with the signed-in user's permissions.
+        - id: ai-service
+          uri: ${AI_SERVICE_URL:http://localhost:8089}
+          predicates:
+            - Path=/api/ai/**
 
 # Shared signing secret with user-service; the gateway validates every token at the edge.
 jwt:
