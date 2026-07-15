@@ -51,6 +51,11 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()  // login & register
+                        // Actuator is scraped by Prometheus from inside the compose network and
+                        // probed by the container healthcheck — neither carries a JWT. Without this
+                        // /actuator/health answered 403, which the healthcheck only tolerated by
+                        // treating 403 as "up".
+                        .requestMatchers("/actuator/**").permitAll()
                         .anyRequest().authenticated()                 // everything else needs token
                 )
 

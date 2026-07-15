@@ -61,7 +61,22 @@ gateway:
     allowed-origin-patterns: ${GATEWAY_CORS_ORIGINS:http://localhost:*,http://127.0.0.1:*}
 
 management:
+  metrics:
+    distribution:
+      # Export _bucket series so Grafana can compute p95/p99 with histogram_quantile().
+      percentiles-histogram:
+        http.server.requests: true
+        hikaricp.connections.acquire: true
+  server:
+    # Actuator on its own port, NOT published to the host in docker-compose.
+    #
+    # The gateway is the one service meant to face the outside world, and AuthGatewayFilter demands
+    # a JWT on every path it routes — so metrics on :8080 would have to be made public to be
+    # scrapable, which would publish request counts and every URI template to anyone. A separate
+    # port is reachable from Prometheus inside the compose network and from nowhere else, and the
+    # filter never sees it.
+    port: 9080
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus

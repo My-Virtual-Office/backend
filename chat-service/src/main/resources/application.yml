@@ -57,10 +57,16 @@ workspace:
     internal-token: ${INTERNAL_API_TOKEN:dev-internal-token}
 
 management:
+  metrics:
+    distribution:
+      # Export _bucket series so Grafana can compute p95/p99 with histogram_quantile().
+      percentiles-histogram:
+        http.server.requests: true
+        hikaricp.connections.acquire: true
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: always

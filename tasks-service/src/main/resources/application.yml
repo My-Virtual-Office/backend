@@ -46,10 +46,16 @@ tasks:
     interval-ms: ${TASKS_REMINDER_INTERVAL_MS:60000}
 
 management:
+  metrics:
+    distribution:
+      # Export _bucket series so Grafana can compute p95/p99 with histogram_quantile().
+      percentiles-histogram:
+        http.server.requests: true
+        hikaricp.connections.acquire: true
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: when_authorized
